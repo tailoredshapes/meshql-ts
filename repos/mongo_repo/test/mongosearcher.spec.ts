@@ -1,5 +1,5 @@
 import { Searcher, Envelope, Repository } from '@meshobj/common';
-import { SearcherCertification, TestTemplates } from '../../common/test/certification/searcher.cert';
+import { SearcherCertification, TestTemplates } from '@meshobj/certification';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { MongoRepository } from '../src/mongoRepo';
 import { Collection, MongoClient } from 'mongodb';
@@ -7,11 +7,12 @@ import { MongoSearcher } from '../src/mongoSearcher';
 import { DTOFactory } from '@meshobj/graphlette';
 import { NoOp, Auth } from '@meshobj/auth';
 import { compile } from 'handlebars';
+import { describe, beforeEach, afterAll, it, expect } from 'vitest';
 
 let mongod: MongoMemoryServer;
 const mongos: MongoClient[] = [];
 
-const createSearcher = async (data: Envelope[]): Promise<{ repository: Repository; searcher: Searcher }> => {
+const createSearcher = async (): Promise<{ repository: Repository; searcher: Searcher }> => {
     if (!mongod) {
         mongod = await MongoMemoryServer.create();
     }
@@ -36,7 +37,9 @@ const tearDown = async (): Promise<void> => {
             client.close();
         }),
     );
-    mongod.stop();
+    if (mongod) {
+        await mongod.stop();
+    }
 };
 
 const findById = `{"id": "{{id}}"}`;
@@ -51,4 +54,6 @@ const templates: TestTemplates = {
     findByNameAndType: compile(findByNameAndType),
 };
 
-SearcherCertification(createSearcher, tearDown, templates);
+describe('Mongo Searcher', () => {
+    SearcherCertification(createSearcher, tearDown, templates, { describe, it, beforeEach, afterAll, expect }, ['TOKEN']);
+});

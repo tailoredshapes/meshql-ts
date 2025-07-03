@@ -1,10 +1,10 @@
 import { Repository } from '@meshobj/common';
-import { RepositoryCertification } from '../../common/test/certification/repository.cert';
+import { RepositoryCertification } from '@meshobj/certification';
 import { MySQLRepository } from '../src/mysqlRepo';
 import { createPool, Pool } from 'mysql2/promise';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import { randomUUID } from 'crypto';
-import { describe } from 'vitest';
+import { describe, beforeEach, afterAll, it, expect } from 'vitest';
 
 let container: StartedTestContainer;
 const pools: Pool[] = [];
@@ -49,5 +49,5 @@ const tearDown = async (): Promise<void> => {
 };
 
 describe('mySQL Repo', () => {
-    RepositoryCertification(createRepository, tearDown);
+    RepositoryCertification(createRepository, tearDown, { describe, it, beforeEach, afterAll, expect });
 });

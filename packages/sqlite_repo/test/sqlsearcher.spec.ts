@@ -1,5 +1,5 @@
 import { Searcher, Envelope, Repository } from '@meshobj/common';
-import { SearcherCertification, TestTemplates } from '../../common/test/certification/searcher.cert';
+import { SearcherCertification, TestTemplates } from '@meshobj/certification';
 import { DTOFactory } from '@meshobj/graphlette';
 import { NoOp, Auth } from '@meshobj/auth';
 import { compile } from 'handlebars';
@@ -7,7 +7,8 @@ import { Database, open } from 'sqlite';
 import sqlite3 from 'sqlite3';
 import { SQLiteRepository } from '../src/sqliteRepo';
 import { SQLiteSearcher } from '../src/sqliteSearcher';
-import { describe } from 'vitest';
+import { describe, beforeEach, afterAll, it, expect } from 'vitest';
+
 const dbs: Database[] = [];
 
 const createSearcher = async (): Promise<{ repository: Repository; searcher: Searcher }> => {
@@ -50,5 +51,5 @@ const templates: TestTemplates = {
 };
 
 describe('SQLite Searcher', () => {
-    SearcherCertification(createSearcher, tearDown, templates);
+    SearcherCertification(createSearcher, tearDown, templates, { describe, it, beforeEach, afterAll, expect }, ['TOKEN']);
 });

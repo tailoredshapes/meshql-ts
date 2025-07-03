@@ -1,15 +1,13 @@
-import { SearcherCertification } from '../../common/test/certification/searcher.cert';
+import { SearcherCertification, TestTemplates } from '@meshobj/certification';
 import { createPool, Pool } from 'mysql2/promise';
 import { MySQLSearcher } from '../src/mysqlSearcher';
 import { MySQLRepository } from '../src/mysqlRepo';
 import { compile } from 'handlebars';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import { randomUUID } from 'crypto';
-import { TestTemplates } from '../../common/test/certification/searcher.cert';
 import { DTOFactory } from '@meshobj/graphlette';
 import { NoOp } from '@meshobj/auth';
-
-import { describe } from 'vitest';
+import { describe, beforeEach, afterAll, it, expect } from 'vitest';
 
 const pools: Pool[] = [];
 let container: StartedTestContainer;
@@ -76,5 +74,5 @@ const templates: TestTemplates = {
 };
 
 describe('MySQL Searcher', () => {
-    SearcherCertification(createSearcher, tearDown, templates);
+    SearcherCertification(createSearcher, tearDown, templates, { describe, it, beforeEach, afterAll, expect });
 });

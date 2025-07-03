@@ -1,5 +1,5 @@
-export { MongoSearcher } from './mongoSearcher.js';
-export { MongoRepository } from './mongoRepo.js';
+export { MongoSearcher } from './mongoSearcher';
+export { MongoRepository } from './mongoRepo';
 
 import { MongoSearcher } from './mongoSearcher.js';
 import { MongoRepository } from './mongoRepo.js';

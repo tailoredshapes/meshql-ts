@@ -1,4 +1,4 @@
-import { ServerCertificiation } from '../../server/test/the_farm.cert';
+import { ServerCertificiation } from '@meshobj/certification';
 import Log4js from 'log4js';
 import { describe } from 'vitest';
 import { SQLitePlugin } from '../src/';

@@ -868,6 +868,20 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@meshobj/certification@npm:^0.2.0, @meshobj/certification@workspace:packages/certification":
+  version: 0.0.0-use.local
+  resolution: "@meshobj/certification@workspace:packages/certification"
+  dependencies:
+    "@types/jsonwebtoken": "npm:^9.0.10"
+    handlebars: "npm:^4.7.7"
+    jsonwebtoken: "npm:^9.0.2"
+  peerDependencies:
+    "@meshobj/common": "*"
+    "@meshobj/server": "*"
+    vitest: "*"
+  languageName: unknown
+  linkType: soft
+
 "@meshobj/cli@workspace:*, @meshobj/cli@workspace:packages/cli":
   version: 0.0.0-use.local
   resolution: "@meshobj/cli@workspace:packages/cli"
@@ -997,70 +1011,54 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@meshobj/mongo_repo@npm:^0.2.0, @meshobj/mongo_repo@workspace:packages/mongo_repo":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/mongo_repo@workspace:packages/mongo_repo"
+"@meshobj/mongo_repo@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "@meshobj/mongo_repo@npm:0.2.0"
   dependencies:
     "@meshobj/auth": "npm:^0.2.0"
     "@meshobj/common": "npm:^0.2.0"
     "@meshobj/graphlette": "npm:^0.2.0"
     "@meshobj/server": "npm:^0.2.0"
-    "@types/node": "npm:^22.10.6"
-    c8: "npm:^10.1.3"
     log4js: "npm:^6.9.1"
     mongodb: "npm:^6.12.0"
-    mongodb-memory-server: "npm:^10.1.3"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.7.3"
     uuid: "npm:^11.0.3"
-    vitest: "npm:^2.1.8"
-  languageName: unknown
-  linkType: soft
+  checksum: 10c0/c6c4cbf9d46399fcc1d37661532a475d8f91cdd76ad76e3e52f17b8c9e12c27de6262bc3fbfab2af114fa1ca006cdb32e041d29a31ffa224be9e614f3a58966a
+  languageName: node
+  linkType: hard
 
-"@meshobj/mysql_repo@npm:^0.2.0, @meshobj/mysql_repo@workspace:packages/mysql_repo":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/mysql_repo@workspace:packages/mysql_repo"
+"@meshobj/mysql_repo@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "@meshobj/mysql_repo@npm:0.2.0"
   dependencies:
     "@meshobj/auth": "npm:^0.2.0"
     "@meshobj/common": "npm:^0.2.0"
     "@meshobj/graphlette": "npm:^0.2.0"
     "@meshobj/server": "npm:^0.2.0"
     "@testcontainers/mysql": "npm:^10.18.0"
-    "@types/node": "npm:^22.10.6"
-    c8: "npm:^10.1.3"
     handlebars: "npm:^4.7.8"
     log4js: "npm:^6.9.1"
     mysql2: "npm:^3.12.0"
-    testcontainers: "npm:^10.16.0"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.7.3"
     uuid: "npm:^11.0.3"
-    vitest: "npm:^2.1.8"
-  languageName: unknown
-  linkType: soft
+  checksum: 10c0/f1d80628998de3a7483c89a5e19dc1f89c60052feffd94d4c57c7fd78910af916d4f57592b05ff2a08a59720cf6c632920f889d6c5cef7329c015d1b93aa795c
+  languageName: node
+  linkType: hard
 
-"@meshobj/postgres_repo@npm:^0.2.0, @meshobj/postgres_repo@workspace:packages/postgres_repo":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/postgres_repo@workspace:packages/postgres_repo"
+"@meshobj/postgres_repo@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "@meshobj/postgres_repo@npm:0.2.0"
   dependencies:
     "@meshobj/auth": "npm:^0.2.0"
     "@meshobj/common": "npm:^0.2.0"
     "@meshobj/graphlette": "npm:^0.2.0"
     "@meshobj/server": "npm:^0.2.0"
     "@testcontainers/postgresql": "npm:^10.18.0"
-    "@types/node": "npm:^22.10.6"
-    "@types/pg": "npm:^8"
-    c8: "npm:^10.1.3"
     handlebars: "npm:^4.7.8"
     log4js: "npm:^6.9.1"
     pg: "npm:^8.13.1"
-    testcontainers: "npm:^10.16.0"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.7.3"
     uuid: "npm:^11.0.3"
-    vitest: "npm:^2.1.8"
-  languageName: unknown
-  linkType: soft
+  checksum: 10c0/85d8812de7243f1a2021752b8a6ae802237e10e9e64f22a2101b9da49f28b7cd4113472daa545175a9920477a3d07dc2ba49827b4940f2e5db543c9bc03953ae
+  languageName: node
+  linkType: hard
 
 "@meshobj/restlette@npm:^0.2.0, @meshobj/restlette@workspace:packages/restlette":
   version: 0.0.0-use.local
@@ -1144,6 +1142,74 @@ __metadata:
     sqlite3: "npm:^5.1.7"
     typescript: "npm:^5.7.2"
     uuid: "npm:^11.0.5"
+    vitest: "npm:^2.1.8"
+  languageName: unknown
+  linkType: soft
+
+"@meshobjrepo/mongo_repo@workspace:repos/mongo_repo":
+  version: 0.0.0-use.local
+  resolution: "@meshobjrepo/mongo_repo@workspace:repos/mongo_repo"
+  dependencies:
+    "@meshobj/auth": "npm:^0.2.0"
+    "@meshobj/certification": "npm:^0.2.0"
+    "@meshobj/common": "npm:^0.2.0"
+    "@meshobj/graphlette": "npm:^0.2.0"
+    "@meshobj/server": "npm:^0.2.0"
+    "@types/node": "npm:^22.10.6"
+    c8: "npm:^10.1.3"
+    log4js: "npm:^6.9.1"
+    mongodb: "npm:^6.12.0"
+    mongodb-memory-server: "npm:^10.1.3"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    uuid: "npm:^11.0.3"
+    vitest: "npm:^2.1.8"
+  languageName: unknown
+  linkType: soft
+
+"@meshobjrepo/mysql_repo@workspace:repos/mysql_repo":
+  version: 0.0.0-use.local
+  resolution: "@meshobjrepo/mysql_repo@workspace:repos/mysql_repo"
+  dependencies:
+    "@meshobj/auth": "npm:^0.2.0"
+    "@meshobj/certification": "npm:^0.2.0"
+    "@meshobj/common": "npm:^0.2.0"
+    "@meshobj/graphlette": "npm:^0.2.0"
+    "@meshobj/server": "npm:^0.2.0"
+    "@testcontainers/mysql": "npm:^10.18.0"
+    "@types/node": "npm:^22.10.6"
+    c8: "npm:^10.1.3"
+    handlebars: "npm:^4.7.8"
+    log4js: "npm:^6.9.1"
+    mysql2: "npm:^3.12.0"
+    testcontainers: "npm:^10.16.0"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    uuid: "npm:^11.0.3"
+    vitest: "npm:^2.1.8"
+  languageName: unknown
+  linkType: soft
+
+"@meshobjrepo/postgres_repo@workspace:repos/postgres_repo":
+  version: 0.0.0-use.local
+  resolution: "@meshobjrepo/postgres_repo@workspace:repos/postgres_repo"
+  dependencies:
+    "@meshobj/auth": "npm:^0.2.0"
+    "@meshobj/certification": "npm:^0.2.0"
+    "@meshobj/common": "npm:^0.2.0"
+    "@meshobj/graphlette": "npm:^0.2.0"
+    "@meshobj/server": "npm:^0.2.0"
+    "@testcontainers/postgresql": "npm:^10.18.0"
+    "@types/node": "npm:^22.10.6"
+    "@types/pg": "npm:^8"
+    c8: "npm:^10.1.3"
+    handlebars: "npm:^4.7.8"
+    log4js: "npm:^6.9.1"
+    pg: "npm:^8.13.1"
+    testcontainers: "npm:^10.16.0"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    uuid: "npm:^11.0.3"
     vitest: "npm:^2.1.8"
   languageName: unknown
   linkType: soft
@@ -2119,6 +2185,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/jsonwebtoken@npm:^9.0.10":
+  version: 9.0.10
+  resolution: "@types/jsonwebtoken@npm:9.0.10"
+  dependencies:
+    "@types/ms": "npm:*"
+    "@types/node": "npm:*"
+  checksum: 10c0/0688ac8fb75f809201cb7e18a12b9d80ce539cb9dd27e1b01e11807cb1a337059e899b8ee3abc3f2c9417f02e363a3069d9eab9ef9724b1da1f0e10713514f94
+  languageName: node
+  linkType: hard
+
 "@types/mime@npm:^1":
   version: 1.3.5
   resolution: "@types/mime@npm:1.3.5"
@@ -2137,6 +2213,13 @@ __metadata:
   version: 1.2.5
   resolution: "@types/minimist@npm:1.2.5"
   checksum: 10c0/3f791258d8e99a1d7d0ca2bda1ca6ea5a94e5e7b8fc6cde84dd79b0552da6fb68ade750f0e17718f6587783c24254bbca0357648dd59dc3812c150305cabdc46
+  languageName: node
+  linkType: hard
+
+"@types/ms@npm:*":
+  version: 2.1.0
+  resolution: "@types/ms@npm:2.1.0"
+  checksum: 10c0/5ce692ffe1549e1b827d99ef8ff71187457e0eb44adbae38fdf7b9a74bae8d20642ee963c14516db1d35fa2652e65f47680fdf679dcbde52bbfadd021f497225
   languageName: node
   linkType: hard
 

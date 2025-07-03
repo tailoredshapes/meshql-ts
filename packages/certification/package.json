@@ -1,0 +1,32 @@
+{
+  "name": "@meshobj/certification",
+  "version": "0.2.0",
+  "description": "Publicly available certification tests for meshobj repositories and searchers.",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "test": "vitest"
+  },
+  "author": "meshobj contributors",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "handlebars": "^4.7.7",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10"
+  },
+  "peerDependencies": {
+    "@meshobj/common": "*",
+    "@meshobj/server": "*",
+    "vitest": "*"
+  }
+}

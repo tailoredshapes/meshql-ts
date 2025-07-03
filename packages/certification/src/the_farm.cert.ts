@@ -2,12 +2,12 @@ import { describe, it, expect, afterAll, beforeAll } from 'vitest';
 import { callSubgraph } from '@meshobj/graphlette';
 import { Application } from 'express';
 import { Server } from 'http';
-import { init } from '../src/server';
+import { init } from '@meshobj/server';
 import { Document, OpenAPIClient, OpenAPIClientAxios } from 'openapi-client-axios';
-import { Restlette } from '../src/configTypes';
+import { Restlette } from '@meshobj/server';
 import * as jwt from 'jsonwebtoken';
-import { Plugin } from '../src/plugin';
-import { Config } from '../src/configTypes';
+import { Plugin } from '@meshobj/server';
+import { Config } from '@meshobj/server';
 
 let __TOKEN__ = ''; // Placeholder for JWT token
 let config: Config;
@@ -18,7 +18,7 @@ let server: Server;
 let farm_id = '';
 let coop1_id = '';
 let coop2_id = '';
-let hen_ids = {};
+let hen_ids: Record<string, string> = {};
 let first_stamp = 0;
 
 let hen_api: any;
@@ -117,8 +117,9 @@ export function ServerCertificiation(setup: () => Promise<void>, plugins: Record
                 `Bearer ${__TOKEN__}`,
             );
 
+            const duck_id:any = hen_ids['duck'];
             expect(json[0].id, `Most of the time this has failed its because you have old data in storage`).toBe(
-                hen_ids['duck'],
+                duck_id
             );
             expect(json[0].name).toBe('duck');
         });

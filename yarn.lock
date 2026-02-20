@@ -753,8 +753,8 @@ __metadata:
   resolution: "@farmql/farm-bun-example@workspace:examples/farm-bun"
   dependencies:
     "@cucumber/cucumber": "npm:^12.2.0"
-    "@meshobj/cli": "workspace:*"
-    "@meshobj/graphlette": "workspace:^"
+    "@tailoredshapes/meshql-cli": "workspace:*"
+    "@tailoredshapes/meshql-graphlette": "workspace:^"
     "@types/chai": "npm:^4.3.11"
     "@types/node": "npm:^20.0.0"
     axios: "npm:^1.6.7"
@@ -773,7 +773,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@farmql/farm-cqrs-example@workspace:examples/farm-cqrs"
   dependencies:
-    "@meshobj/cli": "workspace:*"
+    "@tailoredshapes/meshql-cli": "workspace:*"
   languageName: unknown
   linkType: soft
 
@@ -782,8 +782,8 @@ __metadata:
   resolution: "@farmql/farm-example@workspace:examples/farm"
   dependencies:
     "@cucumber/cucumber": "npm:^12.2.0"
-    "@meshobj/cli": "workspace:*"
-    "@meshobj/graphlette": "workspace:^"
+    "@tailoredshapes/meshql-cli": "workspace:*"
+    "@tailoredshapes/meshql-graphlette": "workspace:^"
     "@types/chai": "npm:^4.3.11"
     "@types/node": "npm:^20.0.0"
     axios: "npm:^1.6.7"
@@ -798,14 +798,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@fastify/ajv-compiler@npm:^4.0.0":
-  version: 4.0.2
-  resolution: "@fastify/ajv-compiler@npm:4.0.2"
+"@fastify/ajv-compiler@npm:^4.0.5":
+  version: 4.0.5
+  resolution: "@fastify/ajv-compiler@npm:4.0.5"
   dependencies:
     ajv: "npm:^8.12.0"
     ajv-formats: "npm:^3.0.1"
     fast-uri: "npm:^3.0.0"
-  checksum: 10c0/ca048db219cc958fb1b962f5dfc141f29e067ecb28a8dbe782bbef80ae3c920021468009cad613f0ed68db410890bb09c773ba2f33cb13e055b48c9c338bd8fa
+  checksum: 10c0/b701602c5fad35d1327a6ebda530ca5ba2c7728223cd214b2b24af7cb2522c864b6cbbe77335ddd6a55d03f76899fb009386da783121b7ece136feb7ea937e13
   languageName: node
   linkType: hard
 
@@ -943,11 +943,11 @@ __metadata:
   linkType: hard
 
 "@isaacs/brace-expansion@npm:^5.0.0":
-  version: 5.0.0
-  resolution: "@isaacs/brace-expansion@npm:5.0.0"
+  version: 5.0.1
+  resolution: "@isaacs/brace-expansion@npm:5.0.1"
   dependencies:
     "@isaacs/balanced-match": "npm:^4.0.1"
-  checksum: 10c0/b4d4812f4be53afc2c5b6c545001ff7a4659af68d4484804e9d514e183d20269bb81def8682c01a22b17c4d6aed14292c8494f7d2ac664e547101c1a905aa977
+  checksum: 10c0/e5d67c7bbf1f17b88132a35bc638af306d48acbb72810d48fa6e6edd8ab375854773108e8bf70f021f7ef6a8273455a6d1f0c3b5aa2aff06ce7894049ab77fb8
   languageName: node
   linkType: hard
 
@@ -1134,389 +1134,6 @@ __metadata:
   checksum: 10c0/f050e79c0bd982c6fdf9b7347275a94cc80f7a6599094f1cf114c10d5373c21afac9bd1a5c0b2ca400e6aaf18da883c384dfd6e5c84a186a2c09c912bf9b2238
   languageName: node
   linkType: hard
-
-"@meshobj/auth@npm:^0.2.0, @meshobj/auth@workspace:core/auth":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/auth@workspace:core/auth"
-  dependencies:
-    "@meshobj/common": "npm:^0.2.0"
-    "@types/express": "npm:^4.17.17"
-    "@types/node": "npm:^22.10.6"
-    express: "npm:^4.17.17"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.7.2"
-    vitest: "npm:^2.1.8"
-  languageName: unknown
-  linkType: soft
-
-"@meshobj/casbin_auth@npm:^0.2.0, @meshobj/casbin_auth@workspace:core/casbin_auth":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/casbin_auth@workspace:core/casbin_auth"
-  dependencies:
-    "@meshobj/auth": "npm:^0.2.0"
-    "@meshobj/common": "npm:^0.2.0"
-    "@types/typescript": "npm:^2.0.0"
-    c8: "npm:^10.1.3"
-    casbin: "npm:^5.36.0"
-    typescript: "npm:^5.7.2"
-    vitest: "npm:^2.1.8"
-  languageName: unknown
-  linkType: soft
-
-"@meshobj/cert@npm:0.2.0, @meshobj/cert@npm:^0.2.0, @meshobj/cert@workspace:core/cert":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/cert@workspace:core/cert"
-  dependencies:
-    "@cucumber/cucumber": "npm:^12.2.0"
-    "@meshobj/auth": "npm:^0.2.0"
-    "@meshobj/common": "npm:^0.2.0"
-    "@meshobj/graphlette": "npm:^0.2.0"
-    "@meshobj/server": "npm:^0.2.0"
-    "@types/node": "npm:^22.10.6"
-    ajv: "npm:^8.17.1"
-    ajv-formats: "npm:^3.0.1"
-    handlebars: "npm:^4.7.8"
-    log4js: "npm:^6.9.1"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.7.3"
-    vitest: "npm:^2.1.8"
-    zod: "npm:^3.24.2"
-  languageName: unknown
-  linkType: soft
-
-"@meshobj/cli@workspace:*, @meshobj/cli@workspace:core/cli":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/cli@workspace:core/cli"
-  dependencies:
-    "@meshobj/auth": "npm:^0.2.0"
-    "@meshobj/casbin_auth": "npm:^0.2.0"
-    "@meshobj/common": "npm:^0.2.0"
-    "@meshobj/graphlette": "npm:^0.2.0"
-    "@meshobj/jwt_auth": "npm:^0.2.0"
-    "@meshobj/mongo_repo": "npm:^0.2.0"
-    "@meshobj/mysql_repo": "npm:^0.2.0"
-    "@meshobj/postgres_repo": "npm:^0.2.0"
-    "@meshobj/restlette": "npm:^0.2.0"
-    "@meshobj/server": "npm:^0.2.0"
-    "@meshobj/sqlite_repo": "npm:^0.2.0"
-    "@pushcorn/hocon-parser": "npm:^1.3.1"
-    "@types/cors": "npm:^2"
-    "@types/dotenv": "npm:^8.2.3"
-    "@types/express": "npm:^5.0.0"
-    "@types/node": "npm:^22.10.6"
-    "@types/pg": "npm:^8"
-    "@types/yargs": "npm:^17.0.33"
-    ajv: "npm:^8.17.1"
-    ajv-formats: "npm:^3.0.1"
-    axios: "npm:^1.7.9"
-    c8: "npm:^10.1.3"
-    cors: "npm:^2.8.5"
-    dotenv: "npm:^16.4.7"
-    express: "npm:^4.21.2"
-    express-graphql: "npm:^0.12.0"
-    graphql: "npm:^15.8.0"
-    handlebars: "npm:^4.7.8"
-    js-yaml: "npm:^4.1.0"
-    jsonwebtoken: "npm:^9.0.2"
-    log4js: "npm:^6.9.1"
-    mongodb: "npm:^6.13.0"
-    mysql2: "npm:^3.12.0"
-    openapi-client-axios: "npm:^7.5.5"
-    pg: "npm:^8.13.1"
-    sqlite: "npm:^5.1.1"
-    sqlite3: "npm:^5.1.7"
-    swagger-ui-express: "npm:^5.0.1"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.7.3"
-    vitest: "npm:^2.1.8"
-    yargs: "npm:^17.7.2"
-  bin:
-    cli: ./dist/cli.js
-  languageName: unknown
-  linkType: soft
-
-"@meshobj/common@npm:^0.2.0, @meshobj/common@workspace:*, @meshobj/common@workspace:core/common":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/common@workspace:core/common"
-  dependencies:
-    "@cucumber/cucumber": "npm:^12.2.0"
-    "@types/node": "npm:^22.10.6"
-    ajv: "npm:^8.17.1"
-    ajv-formats: "npm:^3.0.1"
-    handlebars: "npm:^4.7.8"
-    log4js: "npm:^6.9.1"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.7.3"
-    vitest: "npm:^2.1.8"
-    zod: "npm:^3.24.2"
-  languageName: unknown
-  linkType: soft
-
-"@meshobj/deploy@workspace:*, @meshobj/deploy@workspace:core/deploy":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/deploy@workspace:core/deploy"
-  dependencies:
-    "@meshobj/common": "workspace:*"
-    "@meshobj/server": "workspace:*"
-    "@types/js-yaml": "npm:^4.0.5"
-    "@types/node": "npm:^22.10.6"
-    js-yaml: "npm:^4.1.0"
-    typescript: "npm:^5.7.3"
-    vitest: "npm:^2.1.8"
-  languageName: unknown
-  linkType: soft
-
-"@meshobj/events-example@workspace:examples/events":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/events-example@workspace:examples/events"
-  dependencies:
-    "@meshobj/cli": "workspace:*"
-    "@meshobj/common": "workspace:*"
-    "@meshobj/graphlette": "workspace:^"
-    "@meshobj/mongo_repo": "workspace:*"
-    "@meshobj/server": "workspace:*"
-    "@testcontainers/kafka": "npm:^11.7.2"
-    "@testcontainers/mongodb": "npm:^11.7.2"
-    "@types/node": "npm:^20.0.0"
-    axios: "npm:^1.6.7"
-    js-yaml: "npm:^4.1.0"
-    kafkajs: "npm:^2.2.4"
-    mongodb: "npm:^6.20.0"
-    openapi-client-axios: "npm:^7.5.5"
-    testcontainers: "npm:^10.18.0"
-    typescript: "npm:^5.0.0"
-    vitest: "npm:^3.0.5"
-  languageName: unknown
-  linkType: soft
-
-"@meshobj/graphlette@npm:^0.2.0, @meshobj/graphlette@workspace:^, @meshobj/graphlette@workspace:core/graphlette":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/graphlette@workspace:core/graphlette"
-  dependencies:
-    "@meshobj/auth": "npm:^0.2.0"
-    "@meshobj/common": "npm:^0.2.0"
-    "@types/express": "npm:^4"
-    "@types/handlebars": "npm:^4.1.0"
-    c8: "npm:^10.1.3"
-    dataloader: "npm:^2.2.2"
-    express: "npm:^4.21.2"
-    express-graphql: "npm:^0.12.0"
-    fetch-mock: "npm:^12.2.0"
-    graphql: "npm:^15.10.1"
-    handlebars: "npm:^4.7.8"
-    http: "npm:^0.0.1-security"
-    log4js: "npm:^6.9.1"
-    typescript: "npm:^5.7.2"
-    vitest: "npm:^2.1.8"
-  languageName: unknown
-  linkType: soft
-
-"@meshobj/jwt_auth@npm:^0.2.0, @meshobj/jwt_auth@workspace:core/jwt_auth":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/jwt_auth@workspace:core/jwt_auth"
-  dependencies:
-    "@meshobj/auth": "npm:^0.2.0"
-    "@meshobj/common": "npm:^0.2.0"
-    "@types/express": "npm:^4"
-    "@types/node": "npm:^22.10.6"
-    c8: "npm:^10.1.3"
-    express: "npm:^4.21.2"
-    jsonwebtoken: "npm:^9.0.2"
-    log4js: "npm:^6.9.1"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.7.3"
-    vitest: "npm:^3.0.1"
-  languageName: unknown
-  linkType: soft
-
-"@meshobj/mongo_repo@npm:^0.2.0, @meshobj/mongo_repo@workspace:*, @meshobj/mongo_repo@workspace:repos/mongo_repo":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/mongo_repo@workspace:repos/mongo_repo"
-  dependencies:
-    "@cucumber/cucumber": "npm:^12.2.0"
-    "@meshobj/auth": "npm:^0.2.0"
-    "@meshobj/cert": "npm:0.2.0"
-    "@meshobj/common": "npm:^0.2.0"
-    "@meshobj/graphlette": "npm:^0.2.0"
-    "@meshobj/server": "npm:^0.2.0"
-    "@types/jsonwebtoken": "npm:^9.0.5"
-    "@types/node": "npm:^22.10.6"
-    axios: "npm:^1.6.7"
-    c8: "npm:^10.1.3"
-    chai: "npm:^4.3.10"
-    js-yaml: "npm:^4.1.0"
-    jsonwebtoken: "npm:^9.0.2"
-    lcov-result-merger: "npm:^5.0.1"
-    log4js: "npm:^6.9.1"
-    mongodb: "npm:^6.12.0"
-    mongodb-memory-server: "npm:^10.1.3"
-    openapi-client-axios: "npm:^7.5.5"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.7.3"
-    uuid: "npm:^11.0.3"
-    vitest: "npm:^2.1.8"
-  languageName: unknown
-  linkType: soft
-
-"@meshobj/mysql_repo@npm:^0.2.0, @meshobj/mysql_repo@workspace:repos/mysql_repo":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/mysql_repo@workspace:repos/mysql_repo"
-  dependencies:
-    "@cucumber/cucumber": "npm:^12.2.0"
-    "@meshobj/auth": "npm:^0.2.0"
-    "@meshobj/cert": "npm:^0.2.0"
-    "@meshobj/common": "npm:^0.2.0"
-    "@meshobj/graphlette": "npm:^0.2.0"
-    "@meshobj/server": "npm:^0.2.0"
-    "@testcontainers/mysql": "npm:^10.18.0"
-    "@types/jsonwebtoken": "npm:^9.0.5"
-    "@types/node": "npm:^22.10.6"
-    axios: "npm:^1.6.7"
-    c8: "npm:^10.1.3"
-    chai: "npm:^4.3.10"
-    handlebars: "npm:^4.7.8"
-    js-yaml: "npm:^4.1.0"
-    jsonwebtoken: "npm:^9.0.2"
-    lcov-result-merger: "npm:^5.0.1"
-    log4js: "npm:^6.9.1"
-    mysql2: "npm:^3.12.0"
-    openapi-client-axios: "npm:^7.5.5"
-    testcontainers: "npm:^10.18.0"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.7.3"
-    uuid: "npm:^11.0.3"
-    vitest: "npm:^2.1.8"
-  languageName: unknown
-  linkType: soft
-
-"@meshobj/postgres_repo@npm:^0.2.0, @meshobj/postgres_repo@workspace:repos/postgres_repo":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/postgres_repo@workspace:repos/postgres_repo"
-  dependencies:
-    "@cucumber/cucumber": "npm:^12.2.0"
-    "@meshobj/auth": "npm:^0.2.0"
-    "@meshobj/cert": "npm:^0.2.0"
-    "@meshobj/common": "npm:^0.2.0"
-    "@meshobj/graphlette": "npm:^0.2.0"
-    "@meshobj/server": "npm:^0.2.0"
-    "@testcontainers/postgresql": "npm:^10.18.0"
-    "@types/jsonwebtoken": "npm:^9.0.5"
-    "@types/node": "npm:^22.10.6"
-    "@types/pg": "npm:^8"
-    axios: "npm:^1.6.7"
-    c8: "npm:^10.1.3"
-    chai: "npm:^4.3.10"
-    handlebars: "npm:^4.7.8"
-    js-yaml: "npm:^4.1.0"
-    jsonwebtoken: "npm:^9.0.2"
-    lcov-result-merger: "npm:^5.0.1"
-    log4js: "npm:^6.9.1"
-    openapi-client-axios: "npm:^7.5.5"
-    pg: "npm:^8.13.1"
-    testcontainers: "npm:^10.18.0"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.7.3"
-    uuid: "npm:^11.0.3"
-    vitest: "npm:^2.1.8"
-  languageName: unknown
-  linkType: soft
-
-"@meshobj/restlette@npm:^0.2.0, @meshobj/restlette@workspace:core/restlette":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/restlette@workspace:core/restlette"
-  dependencies:
-    "@meshobj/auth": "npm:^0.2.0"
-    "@meshobj/common": "npm:^0.2.0"
-    "@types/express": "npm:^4.17.17"
-    "@types/node": "npm:^22.10.6"
-    "@types/swagger-ui-express": "npm:^4.1.7"
-    ajv: "npm:^8.17.1"
-    ajv-formats: "npm:^3.0.1"
-    c8: "npm:^10.1.3"
-    express: "npm:^4.17.17"
-    fastify: "npm:^5.2.1"
-    log4js: "npm:^6.9.1"
-    moq.ts: "npm:^10.0.8"
-    swagger-ui-express: "npm:^4.1.7"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.7.3"
-    vitest: "npm:^2.1.8"
-  languageName: unknown
-  linkType: soft
-
-"@meshobj/server@npm:^0.2.0, @meshobj/server@workspace:*, @meshobj/server@workspace:core/server":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/server@workspace:core/server"
-  dependencies:
-    "@meshobj/auth": "npm:^0.2.0"
-    "@meshobj/casbin_auth": "npm:^0.2.0"
-    "@meshobj/common": "npm:^0.2.0"
-    "@meshobj/graphlette": "npm:^0.2.0"
-    "@meshobj/jwt_auth": "npm:^0.2.0"
-    "@meshobj/restlette": "npm:^0.2.0"
-    "@types/cors": "npm:^2"
-    "@types/dotenv": "npm:^8.2.3"
-    "@types/express": "npm:^5.0.0"
-    "@types/node": "npm:^22.10.6"
-    "@types/pg": "npm:^8"
-    "@types/yargs": "npm:^17.0.33"
-    ajv: "npm:^8.17.1"
-    ajv-formats: "npm:^3.0.1"
-    axios: "npm:^1.7.9"
-    c8: "npm:^10.1.3"
-    cors: "npm:^2.8.5"
-    dotenv: "npm:^16.4.7"
-    express: "npm:^4.21.2"
-    express-graphql: "npm:^0.12.0"
-    graphql: "npm:^15.8.0"
-    handlebars: "npm:^4.7.8"
-    js-yaml: "npm:^4.1.0"
-    jsonwebtoken: "npm:^9.0.2"
-    log4js: "npm:^6.9.1"
-    mongodb: "npm:^6.13.0"
-    mysql2: "npm:^3.12.0"
-    openapi-client-axios: "npm:^7.5.5"
-    pg: "npm:^8.13.1"
-    sqlite: "npm:^5.1.1"
-    sqlite3: "npm:^5.1.7"
-    swagger-ui-express: "npm:^5.0.1"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.7.3"
-    vitest: "npm:^2.1.8"
-    yargs: "npm:^17.7.2"
-  languageName: unknown
-  linkType: soft
-
-"@meshobj/sqlite_repo@npm:^0.2.0, @meshobj/sqlite_repo@workspace:repos/sqlite_repo":
-  version: 0.0.0-use.local
-  resolution: "@meshobj/sqlite_repo@workspace:repos/sqlite_repo"
-  dependencies:
-    "@cucumber/cucumber": "npm:^12.2.0"
-    "@meshobj/auth": "npm:^0.2.0"
-    "@meshobj/cert": "npm:^0.2.0"
-    "@meshobj/common": "npm:^0.2.0"
-    "@meshobj/graphlette": "npm:^0.2.0"
-    "@meshobj/server": "npm:^0.2.0"
-    "@types/jsonwebtoken": "npm:^9.0.5"
-    "@types/node": "npm:^22.10.6"
-    "@types/typescript": "npm:^2.0.0"
-    axios: "npm:^1.6.7"
-    c8: "npm:^10.1.3"
-    chai: "npm:^4.3.10"
-    handlebars: "npm:^4.7.8"
-    js-yaml: "npm:^4.1.0"
-    jsonwebtoken: "npm:^9.0.2"
-    lcov-result-merger: "npm:^5.0.1"
-    log4js: "npm:^6.9.1"
-    openapi-client-axios: "npm:^7.5.5"
-    sqlite: "npm:^5.1.1"
-    sqlite3: "npm:^5.1.7"
-    ts-node: "npm:^10.9.2"
-    typescript: "npm:^5.7.2"
-    uuid: "npm:^11.0.5"
-    vitest: "npm:^2.1.8"
-  languageName: unknown
-  linkType: soft
 
 "@mongodb-js/saslprep@npm:^1.1.9":
   version: 1.1.9
@@ -2051,6 +1668,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@pinojs/redact@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@pinojs/redact@npm:0.4.0"
+  checksum: 10c0/4b311ba17ee0cf154ff9c39eb063ec04cd0d0017cb3750efcdf06c2d485df3e1095e13e872175993568c5568c23e4508dd877c981bbc9c5ae5e384d569efcdff
+  languageName: node
+  linkType: hard
+
 "@pkgjs/parseargs@npm:^0.11.0":
   version: 0.11.0
   resolution: "@pkgjs/parseargs@npm:0.11.0"
@@ -2355,6 +1979,410 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tailoredshapes/meshql-auth@npm:^0.2.0, @tailoredshapes/meshql-auth@workspace:core/auth":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-auth@workspace:core/auth"
+  dependencies:
+    "@tailoredshapes/meshql-common": "npm:^0.2.0"
+    "@types/express": "npm:^4.17.17"
+    "@types/node": "npm:^22.10.6"
+    express: "npm:^4.17.17"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.2"
+    vitest: "npm:^2.1.8"
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-casbin_auth@npm:^0.2.0, @tailoredshapes/meshql-casbin_auth@workspace:core/casbin_auth":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-casbin_auth@workspace:core/casbin_auth"
+  dependencies:
+    "@tailoredshapes/meshql-auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-common": "npm:^0.2.0"
+    "@types/typescript": "npm:^2.0.0"
+    c8: "npm:^10.1.3"
+    casbin: "npm:^5.36.0"
+    typescript: "npm:^5.7.2"
+    vitest: "npm:^2.1.8"
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-cert@npm:0.2.0, @tailoredshapes/meshql-cert@npm:^0.2.0, @tailoredshapes/meshql-cert@workspace:core/cert":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-cert@workspace:core/cert"
+  dependencies:
+    "@cucumber/cucumber": "npm:^12.2.0"
+    "@tailoredshapes/meshql-auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-common": "npm:^0.2.0"
+    "@tailoredshapes/meshql-graphlette": "npm:^0.2.0"
+    "@tailoredshapes/meshql-server": "npm:^0.2.0"
+    "@types/node": "npm:^22.10.6"
+    ajv: "npm:^8.17.1"
+    ajv-formats: "npm:^3.0.1"
+    handlebars: "npm:^4.7.8"
+    log4js: "npm:^6.9.1"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    vitest: "npm:^2.1.8"
+    zod: "npm:^3.24.2"
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-cli@workspace:*, @tailoredshapes/meshql-cli@workspace:core/cli":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-cli@workspace:core/cli"
+  dependencies:
+    "@pushcorn/hocon-parser": "npm:^1.3.1"
+    "@tailoredshapes/meshql-auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-casbin_auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-common": "npm:^0.2.0"
+    "@tailoredshapes/meshql-graphlette": "npm:^0.2.0"
+    "@tailoredshapes/meshql-jwt_auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-mongo_repo": "npm:^0.2.0"
+    "@tailoredshapes/meshql-mysql_repo": "npm:^0.2.0"
+    "@tailoredshapes/meshql-postgres_repo": "npm:^0.2.0"
+    "@tailoredshapes/meshql-restlette": "npm:^0.2.0"
+    "@tailoredshapes/meshql-server": "npm:^0.2.0"
+    "@tailoredshapes/meshql-sqlite_repo": "npm:^0.2.0"
+    "@types/cors": "npm:^2"
+    "@types/dotenv": "npm:^8.2.3"
+    "@types/express": "npm:^5.0.0"
+    "@types/node": "npm:^22.10.6"
+    "@types/pg": "npm:^8"
+    "@types/yargs": "npm:^17.0.33"
+    ajv: "npm:^8.17.1"
+    ajv-formats: "npm:^3.0.1"
+    axios: "npm:^1.7.9"
+    c8: "npm:^10.1.3"
+    cors: "npm:^2.8.5"
+    dotenv: "npm:^16.4.7"
+    express: "npm:^4.21.2"
+    express-graphql: "npm:^0.12.0"
+    graphql: "npm:^15.8.0"
+    handlebars: "npm:^4.7.8"
+    js-yaml: "npm:^4.1.0"
+    jsonwebtoken: "npm:^9.0.2"
+    log4js: "npm:^6.9.1"
+    mongodb: "npm:^6.13.0"
+    mysql2: "npm:^3.12.0"
+    openapi-client-axios: "npm:^7.5.5"
+    pg: "npm:^8.13.1"
+    sqlite: "npm:^5.1.1"
+    sqlite3: "npm:^5.1.7"
+    swagger-ui-express: "npm:^5.0.1"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    vitest: "npm:^2.1.8"
+    yargs: "npm:^17.7.2"
+  bin:
+    meshql-cli: ./dist/cli.js
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-common@npm:^0.2.0, @tailoredshapes/meshql-common@workspace:*, @tailoredshapes/meshql-common@workspace:core/common":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-common@workspace:core/common"
+  dependencies:
+    "@cucumber/cucumber": "npm:^12.2.0"
+    "@types/node": "npm:^22.10.6"
+    ajv: "npm:^8.17.1"
+    ajv-formats: "npm:^3.0.1"
+    handlebars: "npm:^4.7.8"
+    log4js: "npm:^6.9.1"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    vitest: "npm:^2.1.8"
+    zod: "npm:^3.24.2"
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-deploy@workspace:*, @tailoredshapes/meshql-deploy@workspace:core/deploy":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-deploy@workspace:core/deploy"
+  dependencies:
+    "@tailoredshapes/meshql-common": "workspace:*"
+    "@tailoredshapes/meshql-server": "workspace:*"
+    "@types/js-yaml": "npm:^4.0.5"
+    "@types/node": "npm:^22.10.6"
+    js-yaml: "npm:^4.1.0"
+    typescript: "npm:^5.7.3"
+    vitest: "npm:^2.1.8"
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-events-example@workspace:examples/events":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-events-example@workspace:examples/events"
+  dependencies:
+    "@tailoredshapes/meshql-cli": "workspace:*"
+    "@tailoredshapes/meshql-common": "workspace:*"
+    "@tailoredshapes/meshql-graphlette": "workspace:^"
+    "@tailoredshapes/meshql-mongo_repo": "workspace:*"
+    "@tailoredshapes/meshql-server": "workspace:*"
+    "@testcontainers/kafka": "npm:^11.7.2"
+    "@testcontainers/mongodb": "npm:^11.7.2"
+    "@types/node": "npm:^20.0.0"
+    axios: "npm:^1.6.7"
+    js-yaml: "npm:^4.1.0"
+    kafkajs: "npm:^2.2.4"
+    mongodb: "npm:^6.20.0"
+    openapi-client-axios: "npm:^7.5.5"
+    testcontainers: "npm:^10.18.0"
+    typescript: "npm:^5.0.0"
+    vitest: "npm:^3.0.5"
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-graphlette@npm:^0.2.0, @tailoredshapes/meshql-graphlette@workspace:^, @tailoredshapes/meshql-graphlette@workspace:core/graphlette":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-graphlette@workspace:core/graphlette"
+  dependencies:
+    "@tailoredshapes/meshql-auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-common": "npm:^0.2.0"
+    "@types/express": "npm:^4"
+    "@types/handlebars": "npm:^4.1.0"
+    c8: "npm:^10.1.3"
+    dataloader: "npm:^2.2.2"
+    express: "npm:^4.21.2"
+    express-graphql: "npm:^0.12.0"
+    fetch-mock: "npm:^12.2.0"
+    graphql: "npm:^15.10.1"
+    handlebars: "npm:^4.7.8"
+    http: "npm:^0.0.1-security"
+    log4js: "npm:^6.9.1"
+    typescript: "npm:^5.7.2"
+    vitest: "npm:^2.1.8"
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-jwt_auth@npm:^0.2.0, @tailoredshapes/meshql-jwt_auth@workspace:core/jwt_auth":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-jwt_auth@workspace:core/jwt_auth"
+  dependencies:
+    "@tailoredshapes/meshql-auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-common": "npm:^0.2.0"
+    "@types/express": "npm:^4"
+    "@types/node": "npm:^22.10.6"
+    c8: "npm:^10.1.3"
+    express: "npm:^4.21.2"
+    jsonwebtoken: "npm:^9.0.2"
+    log4js: "npm:^6.9.1"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    vitest: "npm:^3.0.1"
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-mongo_repo@npm:^0.2.0, @tailoredshapes/meshql-mongo_repo@workspace:*, @tailoredshapes/meshql-mongo_repo@workspace:repos/mongo_repo":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-mongo_repo@workspace:repos/mongo_repo"
+  dependencies:
+    "@cucumber/cucumber": "npm:^12.2.0"
+    "@tailoredshapes/meshql-auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-cert": "npm:0.2.0"
+    "@tailoredshapes/meshql-common": "npm:^0.2.0"
+    "@tailoredshapes/meshql-graphlette": "npm:^0.2.0"
+    "@tailoredshapes/meshql-server": "npm:^0.2.0"
+    "@types/jsonwebtoken": "npm:^9.0.5"
+    "@types/node": "npm:^22.10.6"
+    axios: "npm:^1.6.7"
+    c8: "npm:^10.1.3"
+    chai: "npm:^4.3.10"
+    js-yaml: "npm:^4.1.0"
+    jsonwebtoken: "npm:^9.0.2"
+    lcov-result-merger: "npm:^5.0.1"
+    log4js: "npm:^6.9.1"
+    mongodb: "npm:^6.12.0"
+    mongodb-memory-server: "npm:^10.1.3"
+    openapi-client-axios: "npm:^7.5.5"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    uuid: "npm:^11.0.3"
+    vitest: "npm:^2.1.8"
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-mysql_repo@npm:^0.2.0, @tailoredshapes/meshql-mysql_repo@workspace:repos/mysql_repo":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-mysql_repo@workspace:repos/mysql_repo"
+  dependencies:
+    "@cucumber/cucumber": "npm:^12.2.0"
+    "@tailoredshapes/meshql-auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-cert": "npm:^0.2.0"
+    "@tailoredshapes/meshql-common": "npm:^0.2.0"
+    "@tailoredshapes/meshql-graphlette": "npm:^0.2.0"
+    "@tailoredshapes/meshql-server": "npm:^0.2.0"
+    "@testcontainers/mysql": "npm:^10.18.0"
+    "@types/jsonwebtoken": "npm:^9.0.5"
+    "@types/node": "npm:^22.10.6"
+    axios: "npm:^1.6.7"
+    c8: "npm:^10.1.3"
+    chai: "npm:^4.3.10"
+    handlebars: "npm:^4.7.8"
+    js-yaml: "npm:^4.1.0"
+    jsonwebtoken: "npm:^9.0.2"
+    lcov-result-merger: "npm:^5.0.1"
+    log4js: "npm:^6.9.1"
+    mysql2: "npm:^3.12.0"
+    openapi-client-axios: "npm:^7.5.5"
+    testcontainers: "npm:^10.18.0"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    uuid: "npm:^11.0.3"
+    vitest: "npm:^2.1.8"
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-postgres_repo@npm:^0.2.0, @tailoredshapes/meshql-postgres_repo@workspace:repos/postgres_repo":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-postgres_repo@workspace:repos/postgres_repo"
+  dependencies:
+    "@cucumber/cucumber": "npm:^12.2.0"
+    "@tailoredshapes/meshql-auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-cert": "npm:^0.2.0"
+    "@tailoredshapes/meshql-common": "npm:^0.2.0"
+    "@tailoredshapes/meshql-graphlette": "npm:^0.2.0"
+    "@tailoredshapes/meshql-server": "npm:^0.2.0"
+    "@testcontainers/postgresql": "npm:^10.18.0"
+    "@types/jsonwebtoken": "npm:^9.0.5"
+    "@types/node": "npm:^22.10.6"
+    "@types/pg": "npm:^8"
+    axios: "npm:^1.6.7"
+    c8: "npm:^10.1.3"
+    chai: "npm:^4.3.10"
+    handlebars: "npm:^4.7.8"
+    js-yaml: "npm:^4.1.0"
+    jsonwebtoken: "npm:^9.0.2"
+    lcov-result-merger: "npm:^5.0.1"
+    log4js: "npm:^6.9.1"
+    openapi-client-axios: "npm:^7.5.5"
+    pg: "npm:^8.13.1"
+    testcontainers: "npm:^10.18.0"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    uuid: "npm:^11.0.3"
+    vitest: "npm:^2.1.8"
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-restlette@npm:^0.2.0, @tailoredshapes/meshql-restlette@workspace:core/restlette":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-restlette@workspace:core/restlette"
+  dependencies:
+    "@tailoredshapes/meshql-auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-common": "npm:^0.2.0"
+    "@types/express": "npm:^4.17.17"
+    "@types/node": "npm:^22.10.6"
+    "@types/swagger-ui-express": "npm:^4.1.7"
+    ajv: "npm:^8.17.1"
+    ajv-formats: "npm:^3.0.1"
+    c8: "npm:^10.1.3"
+    express: "npm:^4.17.17"
+    fastify: "npm:^5.2.1"
+    log4js: "npm:^6.9.1"
+    moq.ts: "npm:^10.0.8"
+    swagger-ui-express: "npm:^4.1.7"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    vitest: "npm:^2.1.8"
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-server@npm:^0.2.0, @tailoredshapes/meshql-server@workspace:*, @tailoredshapes/meshql-server@workspace:core/server":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-server@workspace:core/server"
+  dependencies:
+    "@tailoredshapes/meshql-auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-casbin_auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-common": "npm:^0.2.0"
+    "@tailoredshapes/meshql-graphlette": "npm:^0.2.0"
+    "@tailoredshapes/meshql-jwt_auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-restlette": "npm:^0.2.0"
+    "@types/cors": "npm:^2"
+    "@types/dotenv": "npm:^8.2.3"
+    "@types/express": "npm:^5.0.0"
+    "@types/node": "npm:^22.10.6"
+    "@types/pg": "npm:^8"
+    "@types/yargs": "npm:^17.0.33"
+    ajv: "npm:^8.17.1"
+    ajv-formats: "npm:^3.0.1"
+    axios: "npm:^1.7.9"
+    c8: "npm:^10.1.3"
+    cors: "npm:^2.8.5"
+    dotenv: "npm:^16.4.7"
+    express: "npm:^4.21.2"
+    express-graphql: "npm:^0.12.0"
+    graphql: "npm:^15.8.0"
+    handlebars: "npm:^4.7.8"
+    js-yaml: "npm:^4.1.0"
+    jsonwebtoken: "npm:^9.0.2"
+    log4js: "npm:^6.9.1"
+    mongodb: "npm:^6.13.0"
+    mysql2: "npm:^3.12.0"
+    openapi-client-axios: "npm:^7.5.5"
+    pg: "npm:^8.13.1"
+    sqlite: "npm:^5.1.1"
+    sqlite3: "npm:^5.1.7"
+    swagger-ui-express: "npm:^5.0.1"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.3"
+    vitest: "npm:^2.1.8"
+    yargs: "npm:^17.7.2"
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-sqlite_repo@npm:^0.2.0, @tailoredshapes/meshql-sqlite_repo@workspace:repos/sqlite_repo":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-sqlite_repo@workspace:repos/sqlite_repo"
+  dependencies:
+    "@cucumber/cucumber": "npm:^12.2.0"
+    "@tailoredshapes/meshql-auth": "npm:^0.2.0"
+    "@tailoredshapes/meshql-cert": "npm:^0.2.0"
+    "@tailoredshapes/meshql-common": "npm:^0.2.0"
+    "@tailoredshapes/meshql-graphlette": "npm:^0.2.0"
+    "@tailoredshapes/meshql-server": "npm:^0.2.0"
+    "@types/jsonwebtoken": "npm:^9.0.5"
+    "@types/node": "npm:^22.10.6"
+    "@types/typescript": "npm:^2.0.0"
+    axios: "npm:^1.6.7"
+    c8: "npm:^10.1.3"
+    chai: "npm:^4.3.10"
+    handlebars: "npm:^4.7.8"
+    js-yaml: "npm:^4.1.0"
+    jsonwebtoken: "npm:^9.0.2"
+    lcov-result-merger: "npm:^5.0.1"
+    log4js: "npm:^6.9.1"
+    openapi-client-axios: "npm:^7.5.5"
+    sqlite: "npm:^5.1.1"
+    sqlite3: "npm:^5.1.7"
+    ts-node: "npm:^10.9.2"
+    typescript: "npm:^5.7.2"
+    uuid: "npm:^11.0.5"
+    vitest: "npm:^2.1.8"
+  languageName: unknown
+  linkType: soft
+
+"@tailoredshapes/meshql-ts@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "@tailoredshapes/meshql-ts@workspace:."
+  dependencies:
+    "@eslint/js": "npm:^8.0.0"
+    "@typescript-eslint/eslint-plugin": "npm:^7.0.0"
+    "@typescript-eslint/parser": "npm:^7.0.0"
+    "@vitest/coverage-v8": "npm:^2.1.9"
+    c8: "npm:^10.1.3"
+    eslint: "npm:^8.0.0"
+    eslint-config-prettier: "npm:^9.0.0"
+    eslint-plugin-prettier: "npm:^5.0.0"
+    globals: "npm:^14.0.0"
+    lcov-result-merger: "npm:^5.0.1"
+    lerna: "npm:^8.1.9"
+    prettier: "npm:^3.2.0"
+    typescript: "npm:^5.7.3"
+    vitest: "npm:^2.1.9"
+  languageName: unknown
+  linkType: soft
+
 "@teppeis/multimaps@npm:3.0.0, @teppeis/multimaps@npm:^3.0.0":
   version: 3.0.0
   resolution: "@teppeis/multimaps@npm:3.0.0"
@@ -2456,9 +2484,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@twofarmql/farm-example@workspace:examples/twofarms"
   dependencies:
-    "@meshobj/cli": "workspace:*"
-    "@meshobj/deploy": "workspace:*"
-    "@meshobj/graphlette": "workspace:^"
+    "@tailoredshapes/meshql-cli": "workspace:*"
+    "@tailoredshapes/meshql-deploy": "workspace:*"
+    "@tailoredshapes/meshql-graphlette": "workspace:^"
     "@types/node": "npm:^20.0.0"
     axios: "npm:^1.6.7"
     js-yaml: "npm:^4.1.0"
@@ -3618,25 +3646,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.6.7":
-  version: 1.10.0
-  resolution: "axios@npm:1.10.0"
+"axios@npm:^1.6.7, axios@npm:^1.7.4, axios@npm:^1.7.9":
+  version: 1.13.5
+  resolution: "axios@npm:1.13.5"
   dependencies:
-    follow-redirects: "npm:^1.15.6"
-    form-data: "npm:^4.0.0"
+    follow-redirects: "npm:^1.15.11"
+    form-data: "npm:^4.0.5"
     proxy-from-env: "npm:^1.1.0"
-  checksum: 10c0/2239cb269cc789eac22f5d1aabd58e1a83f8f364c92c2caa97b6f5cbb4ab2903d2e557d9dc670b5813e9bcdebfb149e783fb8ab3e45098635cd2f559b06bd5d8
-  languageName: node
-  linkType: hard
-
-"axios@npm:^1.7.4, axios@npm:^1.7.9":
-  version: 1.7.9
-  resolution: "axios@npm:1.7.9"
-  dependencies:
-    follow-redirects: "npm:^1.15.6"
-    form-data: "npm:^4.0.0"
-    proxy-from-env: "npm:^1.1.0"
-  checksum: 10c0/b7a41e24b59fee5f0f26c1fc844b45b17442832eb3a0fb42dd4f1430eb4abc571fe168e67913e8a1d91c993232bd1d1ab03e20e4d1fee8c6147649b576fc1b0b
+  checksum: 10c0/abf468c34f2d145f3dc7dbc0f1be67e520630624307bda69a41bbe8d386bd672d87b4405c4ee77f9ff54b235ab02f96a9968fb00e75b13ce64706e352a3068fd
   languageName: node
   linkType: hard
 
@@ -3843,7 +3860,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"buffer-equal-constant-time@npm:1.0.1":
+"buffer-equal-constant-time@npm:^1.0.1":
   version: 1.0.1
   resolution: "buffer-equal-constant-time@npm:1.0.1"
   checksum: 10c0/fb2294e64d23c573d0dd1f1e7a466c3e978fe94a4e0f8183937912ca374619773bef8e2aceb854129d2efecbbc515bbd0cc78d2734a3e3031edb0888531bbc8e
@@ -4897,9 +4914,9 @@ __metadata:
   linkType: hard
 
 "diff@npm:^4.0.1":
-  version: 4.0.2
-  resolution: "diff@npm:4.0.2"
-  checksum: 10c0/81b91f9d39c4eaca068eb0c1eb0e4afbdc5bb2941d197f513dd596b820b956fef43485876226d65d497bebc15666aa2aa82c679e84f65d5f2bfbf14ee46e32c1
+  version: 4.0.4
+  resolution: "diff@npm:4.0.4"
+  checksum: 10c0/855fb70b093d1d9643ddc12ea76dca90dc9d9cdd7f82c08ee8b9325c0dc5748faf3c82e2047ced5dcaa8b26e58f7903900be2628d0380a222c02d79d8de385df
   languageName: node
   linkType: hard
 
@@ -5189,6 +5206,18 @@ __metadata:
   dependencies:
     es-errors: "npm:^1.3.0"
   checksum: 10c0/1fed3d102eb27ab8d983337bb7c8b159dd2a1e63ff833ec54eea1311c96d5b08223b433060ba240541ca8adba9eee6b0a60cdbf2f80634b784febc9cc8b687b4
+  languageName: node
+  linkType: hard
+
+"es-set-tostringtag@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "es-set-tostringtag@npm:2.1.0"
+  dependencies:
+    es-errors: "npm:^1.3.0"
+    get-intrinsic: "npm:^1.2.6"
+    has-tostringtag: "npm:^1.0.2"
+    hasown: "npm:^2.0.2"
+  checksum: 10c0/ef2ca9ce49afe3931cb32e35da4dcb6d86ab02592cfc2ce3e49ced199d9d0bb5085fc7e73e06312213765f5efa47cc1df553a6a5154584b21448e9fb8355b1af
   languageName: node
   linkType: hard
 
@@ -5753,13 +5782,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fast-redact@npm:^3.1.1":
-  version: 3.5.0
-  resolution: "fast-redact@npm:3.5.0"
-  checksum: 10c0/7e2ce4aad6e7535e0775bf12bd3e4f2e53d8051d8b630e0fa9e67f68cb0b0e6070d2f7a94b1d0522ef07e32f7c7cda5755e2b677a6538f1e9070ca053c42343a
-  languageName: node
-  linkType: hard
-
 "fast-uri@npm:^2.3.0":
   version: 2.4.0
   resolution: "fast-uri@npm:2.4.0"
@@ -5775,10 +5797,10 @@ __metadata:
   linkType: hard
 
 "fastify@npm:^5.2.1":
-  version: 5.2.1
-  resolution: "fastify@npm:5.2.1"
+  version: 5.7.4
+  resolution: "fastify@npm:5.7.4"
   dependencies:
-    "@fastify/ajv-compiler": "npm:^4.0.0"
+    "@fastify/ajv-compiler": "npm:^4.0.5"
     "@fastify/error": "npm:^4.0.0"
     "@fastify/fast-json-stringify-compiler": "npm:^5.0.0"
     "@fastify/proxy-addr": "npm:^5.0.0"
@@ -5787,13 +5809,13 @@ __metadata:
     fast-json-stringify: "npm:^6.0.0"
     find-my-way: "npm:^9.0.0"
     light-my-request: "npm:^6.0.0"
-    pino: "npm:^9.0.0"
-    process-warning: "npm:^4.0.0"
+    pino: "npm:^10.1.0"
+    process-warning: "npm:^5.0.0"
     rfdc: "npm:^1.3.1"
-    secure-json-parse: "npm:^3.0.1"
+    secure-json-parse: "npm:^4.0.0"
     semver: "npm:^7.6.0"
     toad-cache: "npm:^3.7.0"
-  checksum: 10c0/00163bcac121e5fcb097dec0230d8e7918f0d5aa4be1ddce87f6571a13d31c9691d20def5dbd12df047bc3fc372cb0a72a392feecf3e2c958dc0931e52d262cb
+  checksum: 10c0/87425737ad4973eac1cb8a2cc00771fae26ccf87f7142d6a100e4b03d92613b050ec2abbb9b54432dfee0bebc5b75f5658c0016e77970cb4fb9d8382729cfc6a
   languageName: node
   linkType: hard
 
@@ -5962,7 +5984,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"follow-redirects@npm:^1.15.6, follow-redirects@npm:^1.15.9":
+"follow-redirects@npm:^1.15.11":
+  version: 1.15.11
+  resolution: "follow-redirects@npm:1.15.11"
+  peerDependenciesMeta:
+    debug:
+      optional: true
+  checksum: 10c0/d301f430542520a54058d4aeeb453233c564aaccac835d29d15e050beb33f339ad67d9bddbce01739c5dc46a6716dbe3d9d0d5134b1ca203effa11a7ef092343
+  languageName: node
+  linkType: hard
+
+"follow-redirects@npm:^1.15.9":
   version: 1.15.9
   resolution: "follow-redirects@npm:1.15.9"
   peerDependenciesMeta:
@@ -5992,14 +6024,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"form-data@npm:^4.0.0":
-  version: 4.0.1
-  resolution: "form-data@npm:4.0.1"
+"form-data@npm:^4.0.5":
+  version: 4.0.5
+  resolution: "form-data@npm:4.0.5"
   dependencies:
     asynckit: "npm:^0.4.0"
     combined-stream: "npm:^1.0.8"
+    es-set-tostringtag: "npm:^2.1.0"
+    hasown: "npm:^2.0.2"
     mime-types: "npm:^2.1.12"
-  checksum: 10c0/bb102d570be8592c23f4ea72d7df9daa50c7792eb0cf1c5d7e506c1706e7426a4e4ae48a35b109e91c85f1c0ec63774a21ae252b66f4eb981cb8efef7d0463c8
+  checksum: 10c0/dd6b767ee0bbd6d84039db12a0fa5a2028160ffbfaba1800695713b46ae974a5f6e08b3356c3195137f8530dcd9dfcb5d5ae1eeff53d0db1e5aad863b619ce3b
   languageName: node
   linkType: hard
 
@@ -6476,10 +6510,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"has-symbols@npm:^1.1.0":
+"has-symbols@npm:^1.0.3, has-symbols@npm:^1.1.0":
   version: 1.1.0
   resolution: "has-symbols@npm:1.1.0"
   checksum: 10c0/dde0a734b17ae51e84b10986e651c664379018d10b91b6b0e9b293eddb32f0f069688c841fb40f19e9611546130153e0a2a48fd7f512891fb000ddfa36f5a20e
+  languageName: node
+  linkType: hard
+
+"has-tostringtag@npm:^1.0.2":
+  version: 1.0.2
+  resolution: "has-tostringtag@npm:1.0.2"
+  dependencies:
+    has-symbols: "npm:^1.0.3"
+  checksum: 10c0/a8b166462192bafe3d9b6e420a1d581d93dd867adb61be223a17a8d6dad147aa77a8be32c961bb2f27b3ef893cae8d36f564ab651f5e9b7938ae86f74027c48c
   languageName: node
   linkType: hard
 
@@ -7139,7 +7182,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"js-yaml@npm:4.1.0, js-yaml@npm:^4.1.0":
+"js-yaml@npm:4.1.0":
   version: 4.1.0
   resolution: "js-yaml@npm:4.1.0"
   dependencies:
@@ -7151,14 +7194,25 @@ __metadata:
   linkType: hard
 
 "js-yaml@npm:^3.10.0, js-yaml@npm:^3.13.1":
-  version: 3.14.1
-  resolution: "js-yaml@npm:3.14.1"
+  version: 3.14.2
+  resolution: "js-yaml@npm:3.14.2"
   dependencies:
     argparse: "npm:^1.0.7"
     esprima: "npm:^4.0.0"
   bin:
     js-yaml: bin/js-yaml.js
-  checksum: 10c0/6746baaaeac312c4db8e75fa22331d9a04cccb7792d126ed8ce6a0bbcfef0cedaddd0c5098fade53db067c09fe00aa1c957674b4765610a8b06a5a189e46433b
+  checksum: 10c0/3261f25912f5dd76605e5993d0a126c2b6c346311885d3c483706cd722efe34f697ea0331f654ce27c00a42b426e524518ec89d65ed02ea47df8ad26dcc8ce69
+  languageName: node
+  linkType: hard
+
+"js-yaml@npm:^4.1.0":
+  version: 4.1.1
+  resolution: "js-yaml@npm:4.1.1"
+  dependencies:
+    argparse: "npm:^2.0.1"
+  bin:
+    js-yaml: bin/js-yaml.js
+  checksum: 10c0/561c7d7088c40a9bb53cc75becbfb1df6ae49b34b5e6e5a81744b14ae8667ec564ad2527709d1a6e7d5e5fa6d483aa0f373a50ad98d42fde368ec4a190d4fae7
   languageName: node
   linkType: hard
 
@@ -7328,24 +7382,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jwa@npm:^1.4.1":
-  version: 1.4.1
-  resolution: "jwa@npm:1.4.1"
+"jwa@npm:^1.4.2":
+  version: 1.4.2
+  resolution: "jwa@npm:1.4.2"
   dependencies:
-    buffer-equal-constant-time: "npm:1.0.1"
+    buffer-equal-constant-time: "npm:^1.0.1"
     ecdsa-sig-formatter: "npm:1.0.11"
     safe-buffer: "npm:^5.0.1"
-  checksum: 10c0/5c533540bf38702e73cf14765805a94027c66a0aa8b16bc3e89d8d905e61a4ce2791e87e21be97d1293a5ee9d4f3e5e47737e671768265ca4f25706db551d5e9
+  checksum: 10c0/210a544a42ca22203e8fc538835205155ba3af6a027753109f9258bdead33086bac3c25295af48ac1981f87f9c5f941bc8f70303670f54ea7dcaafb53993d92c
   languageName: node
   linkType: hard
 
 "jws@npm:^3.2.2":
-  version: 3.2.2
-  resolution: "jws@npm:3.2.2"
+  version: 3.2.3
+  resolution: "jws@npm:3.2.3"
   dependencies:
-    jwa: "npm:^1.4.1"
+    jwa: "npm:^1.4.2"
     safe-buffer: "npm:^5.0.1"
-  checksum: 10c0/e770704533d92df358adad7d1261fdecad4d7b66fa153ba80d047e03ca0f1f73007ce5ed3fbc04d2eba09ba6e7e6e645f351e08e5ab51614df1b0aa4f384dfff
+  checksum: 10c0/9fdf9d6783b1892ef413ef373cd351eacc847ba01deec6fbfea96830e93241863ccbee66f3b749fc2310c59b6db2209d3f4b52931c0c259b52b17de20715917f
   languageName: node
   linkType: hard
 
@@ -7691,9 +7745,9 @@ __metadata:
   linkType: hard
 
 "lodash@npm:^4.17.15, lodash@npm:^4.17.21":
-  version: 4.17.21
-  resolution: "lodash@npm:4.17.21"
-  checksum: 10c0/d8cbea072bb08655bb4c989da418994b073a608dffa608b09ac04b43a791b12aeae7cd7ad919aa4c925f33b48490b5cfe6c1f71d827956071dae2e7bb3a6b74c
+  version: 4.17.23
+  resolution: "lodash@npm:4.17.23"
+  checksum: 10c0/1264a90469f5bb95d4739c43eb6277d15b6d9e186df4ac68c3620443160fc669e2f14c11e7d8b2ccf078b81d06147c01a8ccced9aab9f9f63d50dcf8cace6bf6
   languageName: node
   linkType: hard
 
@@ -8002,27 +8056,6 @@ __metadata:
   checksum: 10c0/254a8a4605b58f450308fc474c82ac9a094848081bf4c06778200207820e5193726dc563a0d2c16468810516a5c97d9d3ea0ca6585d23c58ccfff2403e8dbbeb
   languageName: node
   linkType: hard
-
-"meshobj@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "meshobj@workspace:."
-  dependencies:
-    "@eslint/js": "npm:^8.0.0"
-    "@typescript-eslint/eslint-plugin": "npm:^7.0.0"
-    "@typescript-eslint/parser": "npm:^7.0.0"
-    "@vitest/coverage-v8": "npm:^2.1.9"
-    c8: "npm:^10.1.3"
-    eslint: "npm:^8.0.0"
-    eslint-config-prettier: "npm:^9.0.0"
-    eslint-plugin-prettier: "npm:^5.0.0"
-    globals: "npm:^14.0.0"
-    lcov-result-merger: "npm:^5.0.1"
-    lerna: "npm:^8.1.9"
-    prettier: "npm:^3.2.0"
-    typescript: "npm:^5.7.3"
-    vitest: "npm:^2.1.9"
-  languageName: unknown
-  linkType: soft
 
 "methods@npm:~1.1.2":
   version: 1.1.2
@@ -9646,12 +9679,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pino-abstract-transport@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "pino-abstract-transport@npm:2.0.0"
+"pino-abstract-transport@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "pino-abstract-transport@npm:3.0.0"
   dependencies:
     split2: "npm:^4.0.0"
-  checksum: 10c0/02c05b8f2ffce0d7c774c8e588f61e8b77de8ccb5f8125afd4a7325c9ea0e6af7fb78168999657712ae843e4462bb70ac550dfd6284f930ee57f17f486f25a9f
+  checksum: 10c0/4486e1b9508110aaf963d07741ac98d660b974dd51d8ad42077d215118e27cda20c64da46c07c926898d52540aab7c6b9c37dc0f5355c203bb1d6a72b5bd8d6c
   languageName: node
   linkType: hard
 
@@ -9662,24 +9695,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pino@npm:^9.0.0":
-  version: 9.6.0
-  resolution: "pino@npm:9.6.0"
+"pino@npm:^10.1.0":
+  version: 10.3.1
+  resolution: "pino@npm:10.3.1"
   dependencies:
+    "@pinojs/redact": "npm:^0.4.0"
     atomic-sleep: "npm:^1.0.0"
-    fast-redact: "npm:^3.1.1"
     on-exit-leak-free: "npm:^2.1.0"
-    pino-abstract-transport: "npm:^2.0.0"
+    pino-abstract-transport: "npm:^3.0.0"
     pino-std-serializers: "npm:^7.0.0"
-    process-warning: "npm:^4.0.0"
+    process-warning: "npm:^5.0.0"
     quick-format-unescaped: "npm:^4.0.3"
     real-require: "npm:^0.2.0"
     safe-stable-stringify: "npm:^2.3.1"
     sonic-boom: "npm:^4.0.1"
-    thread-stream: "npm:^3.0.0"
+    thread-stream: "npm:^4.0.0"
   bin:
     pino: bin.js
-  checksum: 10c0/bcd1e9d9b301bea13b95689ca9ad7105ae9451928fb6c0b67b3e58c5fe37cea1d40665f3d6641e3da00be0bbc17b89031e67abbc8ea6aac6164f399309fd78e7
+  checksum: 10c0/ae1c57f2baac85dd5d63a3500746d5ea1cfc4bfcbf356eaec94d42a782eeb80caa4d4614de43a036cf48e2aed46d855a7ff21b126f55a63811def52a894ef937
   languageName: node
   linkType: hard
 
@@ -9874,6 +9907,13 @@ __metadata:
   version: 4.0.1
   resolution: "process-warning@npm:4.0.1"
   checksum: 10c0/577a268b9fd5c3d9f6dbb4348220099391d830905642845d591e7ee8b1e45043d98b7b9826a3c1379bdd1686cdfe0f6cf349cb812affc5853b662e6a9896579e
+  languageName: node
+  linkType: hard
+
+"process-warning@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "process-warning@npm:5.0.0"
+  checksum: 10c0/941f48863d368ec161e0b5890ba0c6af94170078f3d6b5e915c19b36fb59edb0dc2f8e834d25e0d375a8bf368a49d490f080508842168832b93489d17843ec29
   languageName: node
   linkType: hard
 
@@ -10583,10 +10623,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"secure-json-parse@npm:^3.0.1":
-  version: 3.0.2
-  resolution: "secure-json-parse@npm:3.0.2"
-  checksum: 10c0/4c9c005e7fdd8528df35fcdec41dc4e8e15820ce52de19f8102da808f9400a9ed8c0a28971e3efe24b001ee1e60296af553f12bbaab81a152f702dd00af2092d
+"secure-json-parse@npm:^4.0.0":
+  version: 4.1.0
+  resolution: "secure-json-parse@npm:4.1.0"
+  checksum: 10c0/52b3f8125ea974db1333a5b63e6a1df550c36c0d5f9a263911d6732812bd02e938b30be324dcbbb9da3ef9bf5a84849e0dd911f56544003d3c09e8eee12504de
   languageName: node
   linkType: hard
 
@@ -11579,12 +11619,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"thread-stream@npm:^3.0.0":
-  version: 3.1.0
-  resolution: "thread-stream@npm:3.1.0"
+"thread-stream@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "thread-stream@npm:4.0.0"
   dependencies:
     real-require: "npm:^0.2.0"
-  checksum: 10c0/c36118379940b77a6ef3e6f4d5dd31e97b8210c3f7b9a54eb8fe6358ab173f6d0acfaf69b9c3db024b948c0c5fd2a7df93e2e49151af02076b35ada3205ec9a6
+  checksum: 10c0/f0a47a673af574062df20140ec3e857d679365253fcaa98a76c167c9a053ee03291f4b25bd89b078c7f6a48f07f49d5a49e4f5598bb1c8a263ec15955a018fbd
   languageName: node
   linkType: hard
 
@@ -12256,8 +12296,8 @@ __metadata:
   linkType: hard
 
 "vite@npm:^5.0.0":
-  version: 5.4.19
-  resolution: "vite@npm:5.4.19"
+  version: 5.4.21
+  resolution: "vite@npm:5.4.21"
   dependencies:
     esbuild: "npm:^0.21.3"
     fsevents: "npm:~2.3.3"
@@ -12294,7 +12334,7 @@ __metadata:
       optional: true
   bin:
     vite: bin/vite.js
-  checksum: 10c0/c97601234dba482cea5290f2a2ea0fcd65e1fab3df06718ea48adc8ceb14bc3129508216c4989329c618f6a0470b42f439677a207aef62b0c76f445091c2d89e
+  checksum: 10c0/468336a1409f728b464160cbf02672e72271fb688d0e605e776b74a89d27e1029509eef3a3a6c755928d8011e474dbf234824d054d07960be5f23cd176bc72de
   languageName: node
   linkType: hard
 

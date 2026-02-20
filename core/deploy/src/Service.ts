@@ -75,7 +75,7 @@ export class Service {
     }
 
     /**
-     * Generate the Config object (using @meshobj/server types)
+     * Generate the Config object (using @tailoredshapes/meshql-server types)
      */
     generateConfig(): Config {
         return {

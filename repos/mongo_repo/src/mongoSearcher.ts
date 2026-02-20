@@ -1,14 +1,14 @@
-import { Envelope, Searcher } from '@meshobj/common';
-import { Auth } from '@meshobj/auth';
+import { Envelope, Searcher } from '@tailoredshapes/meshql-common';
+import { Auth } from '@tailoredshapes/meshql-auth';
 import { Collection, Document } from 'mongodb';
-import { DTOFactory } from '@meshobj/graphlette';
+import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
 import HandleBars from 'handlebars';
 import Handlebars from 'handlebars';
 import { getLogger } from 'log4js';
 import { Schema } from './types';
 import { MongoClient } from 'mongodb';
 
-let logger = getLogger('meshobj/mongosearcher');
+let logger = getLogger('meshql-ts/mongosearcher');
 
 export class MongoSearcher implements Searcher {
     private authorizer: Auth;

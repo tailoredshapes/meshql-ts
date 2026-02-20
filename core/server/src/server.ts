@@ -1,18 +1,18 @@
 import express, { Application } from 'express';
-import { DTOFactory, root, init as graph_init } from '@meshobj/graphlette';
-import { init as rest_init } from '@meshobj/restlette';
+import { DTOFactory, root, init as graph_init } from '@tailoredshapes/meshql-graphlette';
+import { init as rest_init } from '@tailoredshapes/meshql-restlette';
 import { Config, Graphlette, Restlette, StorageConfig } from './configTypes';
-import { Repository, Searcher, Validator, getLogger } from '@meshobj/common';
-import { Crud } from '@meshobj/restlette';
-import { JSONSchemaValidator } from '@meshobj/restlette';
-import { JWTSubAuthorizer } from '@meshobj/jwt_auth';
-import { Auth } from '@meshobj/auth';
-import { CasbinAuth } from '@meshobj/casbin_auth';
+import { Repository, Searcher, Validator, getLogger } from '@tailoredshapes/meshql-common';
+import { Crud } from '@tailoredshapes/meshql-restlette';
+import { JSONSchemaValidator } from '@tailoredshapes/meshql-restlette';
+import { JWTSubAuthorizer } from '@tailoredshapes/meshql-jwt_auth';
+import { Auth } from '@tailoredshapes/meshql-auth';
+import { CasbinAuth } from '@tailoredshapes/meshql-casbin_auth';
 import cors from 'cors';
 import { Plugin } from './plugin';
 import { checkAllServicesHealth, checkAllServicesReady } from './health';
 
-const logger = getLogger('meshobj/server');
+const logger = getLogger('meshql-ts/server');
 
 async function processGraphlette(
     graphlette: Graphlette,

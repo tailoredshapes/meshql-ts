@@ -1,4 +1,4 @@
-import { Config } from '@meshobj/server';
+import { Config } from '@tailoredshapes/meshql-server';
 import fs from 'fs';
 import { MySQLConfig } from '../src';
 

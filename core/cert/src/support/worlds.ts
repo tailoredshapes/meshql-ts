@@ -1,7 +1,7 @@
 import { World } from '@cucumber/cucumber';
-import { Repository, Envelope, Searcher } from '@meshobj/common';
+import { Repository, Envelope, Searcher } from '@tailoredshapes/meshql-common';
 import { TemplateDelegate } from 'handlebars';
-import { init, Plugin, StorageConfig } from '@meshobj/server';
+import { init, Plugin, StorageConfig } from '@tailoredshapes/meshql-server';
 import { Server } from 'node:http';
 import { Document, OpenAPIClient, OpenAPIClientAxios } from 'openapi-client-axios';
 import { Config } from 'log4js';

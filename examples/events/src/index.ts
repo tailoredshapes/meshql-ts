@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // Main entry point - starts both the MeshQL server and the Kafka processor
 
-import { init } from '@meshobj/server';
-import { configureLogging, getLogger } from '@meshobj/common';
-import { MongoPlugin } from '@meshobj/mongo_repo';
+import { init } from '@tailoredshapes/meshql-server';
+import { configureLogging, getLogger } from '@tailoredshapes/meshql-common';
+import { MongoPlugin } from '@tailoredshapes/meshql-mongo_repo';
 import { RawToProcessedProcessor } from './processor.js';
 import * as path from 'path';
 import * as fs from 'fs';

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { init } from '../src/server';
 import { Config, Graphlette } from '../src/configTypes';
-import { SQLitePlugin, SQLConfig } from '@meshobj/sqlite_repo';
+import { SQLitePlugin, SQLConfig } from '@tailoredshapes/meshql-sqlite_repo';
 
 describe('Server Health Checks', () => {
     let app: any;

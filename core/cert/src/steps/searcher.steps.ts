@@ -1,8 +1,8 @@
 import { Given, When, Then, DataTable } from '@cucumber/cucumber';
 import { IntegrationWorld, SearcherTestTemplates } from '../support/worlds';
 import assert from 'assert';
-import { DTOFactory } from '@meshobj/graphlette';
-import { Auth, NoOp } from '@meshobj/auth';
+import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
+import { Auth, NoOp } from '@tailoredshapes/meshql-auth';
 
 Given('a fresh repository and searcher instance', async function(this: IntegrationWorld) {
     this.repository = await this.plugin!.createRepository(this.config!);

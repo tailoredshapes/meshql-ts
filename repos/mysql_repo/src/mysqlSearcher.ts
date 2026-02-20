@@ -1,12 +1,12 @@
-import { Searcher } from '@meshobj/common';
-import { Auth } from '@meshobj/auth';
-import { DTOFactory } from '@meshobj/graphlette';
+import { Searcher } from '@tailoredshapes/meshql-common';
+import { Auth } from '@tailoredshapes/meshql-auth';
+import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
 import Handlebars from 'handlebars';
 import { getLogger } from 'log4js';
 import { Pool } from 'mysql2/promise';
 import { EnvelopeRow, rowToEnvelope } from './mysqlRepo';
 
-const logger = getLogger('meshobj/mysqlsearcher');
+const logger = getLogger('meshql-ts/mysqlsearcher');
 
 export class MySQLSearcher implements Searcher {
     private pool: Pool;

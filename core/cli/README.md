@@ -1,13 +1,13 @@
-# @meshobj/cli
+# @meshql-ts/cli
 
 The configurable server frontend for meshql, providing a command-line interface to run and configure meshql servers with support for multiple database backends and API types.
 
 ## Installation
 
 ```bash
-npm install @meshobj/cli
+npm install @meshql-ts/cli
 # or
-yarn add @meshobj/cli
+yarn add @meshql-ts/cli
 ```
 
 ## Features
@@ -28,7 +28,7 @@ yarn add @meshobj/cli
 ### Basic Usage
 
 ```bash
-npx @meshobj/cli --config path/to/config.conf
+npx @meshql-ts/cli --config path/to/config.conf
 ```
 
 ### Command Line Options
@@ -83,7 +83,7 @@ The following environment variables can be used in the configuration:
 You can also use the CLI programmatically in your Node.js applications:
 
 ```typescript
-import startServer from '@meshobj/cli';
+import startServer from '@meshql-ts/cli';
 
 // Start the server with a specific config file
 const app = await startServer('path/to/config.conf');

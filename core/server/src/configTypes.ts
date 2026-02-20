@@ -1,4 +1,4 @@
-import { RootConfigSchema } from '@meshobj/common';
+import { RootConfigSchema } from '@tailoredshapes/meshql-common';
 import { z } from 'zod';
 
 export const StorageConfigSchema = z.object({

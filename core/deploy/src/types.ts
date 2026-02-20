@@ -4,14 +4,14 @@ export type {
     Graphlette,
     Restlette,
     StorageConfig
-} from '@meshobj/server';
+} from '@tailoredshapes/meshql-server';
 
 export type {
     Singleton,
     Vector,
     Resolver,
     RootConfig
-} from '@meshobj/common';
+} from '@tailoredshapes/meshql-common';
 
 // Deployment-specific storage config
 // This represents the full storage configuration needed for generating HOCON files

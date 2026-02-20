@@ -1,5 +1,5 @@
 {
-    "name": "@meshobj/cert",
+    "name": "@tailoredshapes/meshql-cert",
     "version": "0.2.0",
     "type": "commonjs",
     "main": "./dist/index.js",
@@ -24,10 +24,10 @@
         "test": "vitest --run --passWithNoTests"
     },
     "dependencies": {
-        "@meshobj/auth": "^0.2.0",
-        "@meshobj/common": "^0.2.0",
-        "@meshobj/graphlette": "^0.2.0",
-        "@meshobj/server": "^0.2.0",
+        "@tailoredshapes/meshql-auth": "^0.2.0",
+        "@tailoredshapes/meshql-common": "^0.2.0",
+        "@tailoredshapes/meshql-graphlette": "^0.2.0",
+        "@tailoredshapes/meshql-server": "^0.2.0",
         "ajv": "^8.17.1",
         "ajv-formats": "^3.0.1",
         "handlebars": "^4.7.8",

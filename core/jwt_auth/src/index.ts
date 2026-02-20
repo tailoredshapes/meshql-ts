@@ -1,10 +1,10 @@
-import { Auth } from '@meshobj/auth';
+import { Auth } from '@tailoredshapes/meshql-auth';
 import { getLogger } from 'log4js';
 const jwt = require('jsonwebtoken');
-import { Envelope } from '@meshobj/common';
+import { Envelope } from '@tailoredshapes/meshql-common';
 import { Request } from 'express';
 
-let logger = getLogger('meshobj/jwtauth');
+let logger = getLogger('meshql-ts/jwtauth');
 
 export class JWTSubAuthorizer implements Auth {
     async getAuthToken(context: Request): Promise<string[]> {

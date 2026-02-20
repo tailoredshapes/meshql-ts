@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { JWTSubAuthorizer } from '../src';
 import { Request } from 'express';
-import { Envelope } from '@meshobj/common';
+import { Envelope } from '@tailoredshapes/meshql-common';
 import jwt from 'jsonwebtoken';
 
 describe('JWTSubAuthorizer', () => {

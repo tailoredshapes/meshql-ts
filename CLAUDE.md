@@ -90,32 +90,32 @@ examples/        # Example applications
 ```
 
 ### Core Components (packages/)
-1. **@meshobj/server** - Express-based server combining GraphQL and REST
-2. **@meshobj/cli** - Command-line interface for server management
-3. **@meshobj/merminator** - Generates configuration from Mermaid diagrams
-4. **@meshobj/graphlette** - GraphQL endpoint generator with relationship resolution
-5. **@meshobj/restlette** - REST API generator with OpenAPI docs
-6. **@meshobj/auth** - Authentication interfaces
-7. **@meshobj/jwt_auth** - JWT token authentication
-8. **@meshobj/casbin_auth** - CASBIN role-based authorization
+1. **@meshql-ts/server** - Express-based server combining GraphQL and REST
+2. **@meshql-ts/cli** - Command-line interface for server management
+3. **@meshql-ts/merminator** - Generates configuration from Mermaid diagrams
+4. **@meshql-ts/graphlette** - GraphQL endpoint generator with relationship resolution
+5. **@meshql-ts/restlette** - REST API generator with OpenAPI docs
+6. **@meshql-ts/auth** - Authentication interfaces
+7. **@meshql-ts/jwt_auth** - JWT token authentication
+8. **@meshql-ts/casbin_auth** - CASBIN role-based authorization
 
 ### Database Plugins (repos/)
 
 **Plugin Architecture:** Database backends are implemented as separate packages in the `repos/` workspace to emphasize their pluggable nature. Adding support for a new database (e.g., DynamoDB, CouchDB, Redis) follows this pattern:
 
 1. Create new package: `repos/dynamo_repo/`
-2. Implement the `Plugin` interface from `@meshobj/common`:
+2. Implement the `Plugin` interface from `@meshql-ts/common`:
    - `createRepository(config)` - CRUD operations
    - `createSearcher(config, dtoFactory, auth)` - Query operations
    - `cleanup()` - Resource cleanup
 3. Add BDD test hooks in `test/support/hooks.ts` using database-specific syntax
-4. Register the plugin in `@meshobj/cli`
+4. Register the plugin in `@meshql-ts/cli`
 
 **Existing Implementations:**
-- **@meshobj/sqlite_repo** - SQLite integration
-- **@meshobj/mongo_repo** - MongoDB integration
-- **@meshobj/postgres_repo** - PostgreSQL integration
-- **@meshobj/mysql_repo** - MySQL integration
+- **@meshql-ts/sqlite_repo** - SQLite integration
+- **@meshql-ts/mongo_repo** - MongoDB integration
+- **@meshql-ts/postgres_repo** - PostgreSQL integration
+- **@meshql-ts/mysql_repo** - MySQL integration
 
 ## Security Architecture & Common Review Pitfalls
 
@@ -131,7 +131,7 @@ External Client → API Gateway (Auth) → MeshQL Services (Authz) → Databases
 
 ### Critical Understanding for Code Reviews
 
-#### 1. JWT Token Handling (`@meshobj/jwt_auth`)
+#### 1. JWT Token Handling (`@meshql-ts/jwt_auth`)
 
 **Code Pattern:**
 ```typescript
@@ -181,7 +181,7 @@ private singletonQuery = Handlebars.compile(`
 
 **Analogy:** This is like saying parameterized queries are vulnerable because someone could write `WHERE id = ?` without quotes. The template author is responsible for correct syntax.
 
-#### 3. CORS Configuration (`@meshobj/server`)
+#### 3. CORS Configuration (`@meshql-ts/server`)
 
 **Code Pattern:**
 ```typescript

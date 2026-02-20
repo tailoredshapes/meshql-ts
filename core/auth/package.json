@@ -1,5 +1,5 @@
 {
-    "name": "@meshobj/auth",
+    "name": "@tailoredshapes/meshql-auth",
     "version": "0.2.0",
     "type": "commonjs",
     "publishConfig": {
@@ -14,7 +14,7 @@
     "author": "Tom Marsh",
     "license": "MIT",
     "dependencies": {
-        "@meshobj/common": "^0.2.0",
+        "@tailoredshapes/meshql-common": "^0.2.0",
         "express": "^4.17.17"
     },
     "devDependencies": {

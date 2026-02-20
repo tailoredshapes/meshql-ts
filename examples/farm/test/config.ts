@@ -1,5 +1,5 @@
-import { Config } from '@meshobj/server';
-import { MongoConfig } from '@meshobj/mongo_repo';
+import { Config } from '@tailoredshapes/meshql-server';
+import { MongoConfig } from '@tailoredshapes/meshql-mongo_repo';
 import fs from 'fs';
 const PORT = 3044;
 const ENV = 'test';

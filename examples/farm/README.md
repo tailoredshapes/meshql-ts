@@ -1,6 +1,6 @@
 # Farm Management System - A Modular Monolith Example
 
-This example demonstrates how to use the meshobj library to build a modular monolith architecture that seamlessly integrates multiple databases while maintaining clean service boundaries. It implements a farm management system where different aspects of the farm are stored in different databases, yet work together cohesively through a unified GraphQL API.
+This example demonstrates how to use the meshql-ts library to build a modular monolith architecture that seamlessly integrates multiple databases while maintaining clean service boundaries. It implements a farm management system where different aspects of the farm are stored in different databases, yet work together cohesively through a unified GraphQL API.
 
 ## Architecture Overview
 

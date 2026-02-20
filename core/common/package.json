@@ -1,5 +1,5 @@
 {
-    "name": "@meshobj/common",
+    "name": "@tailoredshapes/meshql-common",
     "version": "0.2.0",
     "type": "commonjs",
     "main": "./dist/index.js",

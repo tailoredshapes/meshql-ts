@@ -8,7 +8,7 @@ data:
 
     # Source: MongoDB
     debezium.source.connector.class=io.debezium.connector.mongodb.MongoDbConnector
-    debezium.source.mongodb.connection.string=mongodb://mongodb-0.mongodb-headless.meshobj-examples-events.svc.cluster.local:27017,mongodb-1.mongodb-headless.meshobj-examples-events.svc.cluster.local:27017/?replicaSet=rs0
+    debezium.source.mongodb.connection.string=mongodb://mongodb-0.mongodb-headless.meshql-ts-examples-events.svc.cluster.local:27017,mongodb-1.mongodb-headless.meshql-ts-examples-events.svc.cluster.local:27017/?replicaSet=rs0
     debezium.source.topic.prefix=events
     debezium.source.database.include.list=events_development
     debezium.source.collection.include.list=events_development.event,events_development.processedevent
@@ -21,7 +21,7 @@ data:
 
     # Sink: Kafka (Redpanda)
     debezium.sink.type=kafka
-    debezium.sink.kafka.producer.bootstrap.servers=redpanda-0.redpanda-headless.meshobj-examples-events.svc.cluster.local:9092
+    debezium.sink.kafka.producer.bootstrap.servers=redpanda-0.redpanda-headless.meshql-ts-examples-events.svc.cluster.local:9092
     debezium.sink.kafka.producer.key.serializer=org.apache.kafka.common.serialization.StringSerializer
     debezium.sink.kafka.producer.value.serializer=org.apache.kafka.common.serialization.StringSerializer
 

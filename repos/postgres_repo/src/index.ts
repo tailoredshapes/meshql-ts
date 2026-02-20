@@ -2,14 +2,14 @@ export { PostgresSearcher } from './postgresSearcher';
 export { PostgresRepository } from './postgresRepo';
 
 import { Pool, PoolConfig } from 'pg';
-import { StorageConfig } from '@meshobj/server';
+import { StorageConfig } from '@tailoredshapes/meshql-server';
 import { PostgresSearcher } from './postgresSearcher';
 import { PostgresRepository } from './postgresRepo';
 
-import { DTOFactory } from '@meshobj/graphlette';
-import { Auth } from '@meshobj/auth';
-import { Repository } from '@meshobj/common';
-import { Plugin } from '@meshobj/server';
+import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
+import { Auth } from '@tailoredshapes/meshql-auth';
+import { Repository } from '@tailoredshapes/meshql-common';
+import { Plugin } from '@tailoredshapes/meshql-server';
 /**
  * Creates and returns a Postgres Pool connection.
  */

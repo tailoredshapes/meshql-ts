@@ -1,9 +1,9 @@
 import { v4 as uuid } from 'uuid';
 import Log4js from 'log4js';
 import { Collection, Document } from 'mongodb';
-import { Envelope, Id, Repository } from '@meshobj/common';
+import { Envelope, Id, Repository } from '@tailoredshapes/meshql-common';
 
-const logger = Log4js.getLogger('meshobj/mongorepo');
+const logger = Log4js.getLogger('meshql-ts/mongorepo');
 
 function secureRead(tokens: string[], match: any): any {
     if (tokens.length > 0) {

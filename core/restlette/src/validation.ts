@@ -1,4 +1,4 @@
-import { Validator } from '@meshobj/common';
+import { Validator } from '@tailoredshapes/meshql-common';
 import Ajv, { Ajv as AjvType } from 'ajv';
 import addFormats from 'ajv-formats';
 

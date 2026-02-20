@@ -1,4 +1,4 @@
-import { Envelope } from '@meshobj/common';
+import { Envelope } from '@tailoredshapes/meshql-common';
 
 export interface Auth {
     getAuthToken(context: Record<string, any>): Promise<string[]>;

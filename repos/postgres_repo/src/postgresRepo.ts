@@ -1,8 +1,8 @@
 import { Pool, types } from 'pg';
 import { v4 as uuid } from 'uuid';
-import { Envelope, Id, Repository, getLogger } from '@meshobj/common';
+import { Envelope, Id, Repository, getLogger } from '@tailoredshapes/meshql-common';
 
-const logger = getLogger('meshobj/postgres_repo');
+const logger = getLogger('meshql-ts/postgres_repo');
 
 export class PostgresRepository implements Repository {
     private pool: Pool;

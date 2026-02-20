@@ -652,7 +652,7 @@ performance/results/
 
 ```bash
 # Start CQRS services
-cd /tank/repos/meshobj/examples/farm-cqrs
+cd /tank/repos/meshql-ts/examples/farm-cqrs
 docker-compose up -d
 
 # Wait for services to be ready
@@ -679,11 +679,11 @@ awk -F',' 'NR > 1 && $3 ~ /GraphQL/ {
 
 ```bash
 # Stop CQRS
-cd /tank/repos/meshobj/examples/farm-cqrs
+cd /tank/repos/meshql-ts/examples/farm-cqrs
 docker-compose down
 
 # Start monolithic
-cd /tank/repos/meshobj/examples/farm
+cd /tank/repos/meshql-ts/examples/farm
 docker-compose up -d
 
 # Run same test
@@ -759,6 +759,6 @@ The 6-8x improvement comes from:
 ---
 
 **Questions or Issues?**
-- GitHub: https://github.com/your-repo/meshobj/issues
+- GitHub: https://github.com/your-repo/meshql-ts/issues
 - Documentation: examples/farm-cqrs/README.md
 - Test Plans: examples/farm-cqrs/performance/test-plans/

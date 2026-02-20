@@ -1,6 +1,6 @@
-import { Searcher, Envelope } from '@meshobj/common';
-import { Auth } from '@meshobj/auth';
-import { DTOFactory } from '@meshobj/graphlette';
+import { Searcher, Envelope } from '@tailoredshapes/meshql-common';
+import { Auth } from '@tailoredshapes/meshql-auth';
+import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
 import Handlebars from 'handlebars';
 import { Database } from 'sqlite';
 

@@ -3,13 +3,13 @@ export { SQLiteSearcher } from './sqliteSearcher';
 
 import { Database, open } from 'sqlite';
 import sqlite3 from 'sqlite3';
-import { StorageConfig } from '@meshobj/server';
-import { Repository } from '@meshobj/common';
+import { StorageConfig } from '@tailoredshapes/meshql-server';
+import { Repository } from '@tailoredshapes/meshql-common';
 import { SQLiteSearcher } from './sqliteSearcher';
 import { SQLiteRepository } from './sqliteRepo';
-import { Auth } from '@meshobj/auth';
-import { DTOFactory } from '@meshobj/graphlette';
-import { Plugin } from '@meshobj/server';
+import { Auth } from '@tailoredshapes/meshql-auth';
+import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
+import { Plugin } from '@tailoredshapes/meshql-server';
 
 /**
  * Helper that opens SQLite and returns the Database reference.

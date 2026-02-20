@@ -1,4 +1,4 @@
-import { Service, Database, Deployment } from '@meshobj/deploy';
+import { Service, Database, Deployment } from '@tailoredshapes/meshql-deploy';
 import * as path from 'path';
 
 // Define the shared MongoDB database

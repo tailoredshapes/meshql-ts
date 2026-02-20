@@ -12,6 +12,6 @@
         "perf:check": "performance/scripts/wait-for-services.sh"
     },
     "dependencies": {
-        "@meshobj/cli": "workspace:*"
+        "@tailoredshapes/meshql-cli": "workspace:*"
     }
 }

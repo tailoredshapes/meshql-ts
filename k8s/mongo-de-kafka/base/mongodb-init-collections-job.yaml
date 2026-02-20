@@ -15,7 +15,7 @@ spec:
         - |
           set -e
           echo "Waiting for MongoDB replica set PRIMARY..."
-          MONGO_HOST="mongodb-0.mongodb-headless.meshobj-examples-events.svc.cluster.local:27017"
+          MONGO_HOST="mongodb-0.mongodb-headless.meshql-ts-examples-events.svc.cluster.local:27017"
 
           for i in {1..60}; do
             if mongosh --host "$MONGO_HOST" --quiet --eval "rs.status().members.find(m => m.stateStr === 'PRIMARY')" 2>/dev/null | grep -q "PRIMARY"; then
@@ -33,7 +33,7 @@ spec:
         image: mongo:7.0
         command:
         - mongosh
-        - mongodb://mongodb-0.mongodb-headless.meshobj-examples-events.svc.cluster.local:27017/events_development
+        - mongodb://mongodb-0.mongodb-headless.meshql-ts-examples-events.svc.cluster.local:27017/events_development
         - /scripts/init-collections.js
         volumeMounts:
         - name: init-script

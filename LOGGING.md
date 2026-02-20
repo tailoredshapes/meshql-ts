@@ -15,7 +15,7 @@ This project uses log4js for structured logging across all packages. The logging
 ### Basic Usage
 
 ```typescript
-import { getLogger } from '@meshobj/common';
+import { getLogger } from '@meshql-ts/common';
 
 const logger = getLogger('your-category');
 
@@ -30,7 +30,7 @@ logger.error('This is an error message', error);
 The logging is automatically configured when the common package is imported. You can customize it:
 
 ```typescript
-import { configureLogging } from '@meshobj/common';
+import { configureLogging } from '@meshql-ts/common';
 
 // Configure with custom level
 configureLogging('debug');
@@ -59,15 +59,15 @@ LOG_LEVEL=debug ENABLE_FILE_LOGGING=true npm start
 
 Each package uses its own category for better log organization:
 
-- `meshobj/cli`: CLI application logs
-- `meshobj/server`: Server logs
-- `meshobj/restlette`: REST API logs
-- `meshobj/graphlette`: GraphQL logs
-- `meshobj/merminator`: Merminator tool logs
-- `meshobj/postgres_repo`: PostgreSQL repository logs
-- `meshobj/mongo_repo`: MongoDB repository logs
-- `meshobj/mysql_repo`: MySQL repository logs
-- `meshobj/sqlite_repo`: SQLite repository logs
+- `meshql-ts/cli`: CLI application logs
+- `meshql-ts/server`: Server logs
+- `meshql-ts/restlette`: REST API logs
+- `meshql-ts/graphlette`: GraphQL logs
+- `meshql-ts/merminator`: Merminator tool logs
+- `meshql-ts/postgres_repo`: PostgreSQL repository logs
+- `meshql-ts/mongo_repo`: MongoDB repository logs
+- `meshql-ts/mysql_repo`: MySQL repository logs
+- `meshql-ts/sqlite_repo`: SQLite repository logs
 
 ## Migration from console.log
 
@@ -99,7 +99,7 @@ When `ENABLE_FILE_LOGGING=true`, logs are written to `logs/app.log` with:
 ## Example Output
 
 ```
-2025-07-29T20:51:40.398Z [DEBUG] meshobj/restlette - Swagger documentation generated
-2025-07-29T20:51:40.650Z [INFO] meshobj/merminator - Generated JSON schema file { filename: '/path/to/file.json' }
-2025-07-29T20:51:40.651Z [INFO] meshobj/server - Cleaning server
+2025-07-29T20:51:40.398Z [DEBUG] meshql-ts/restlette - Swagger documentation generated
+2025-07-29T20:51:40.650Z [INFO] meshql-ts/merminator - Generated JSON schema file { filename: '/path/to/file.json' }
+2025-07-29T20:51:40.651Z [INFO] meshql-ts/server - Cleaning server
 ``` 

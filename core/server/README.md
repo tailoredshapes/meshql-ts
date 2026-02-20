@@ -1,6 +1,6 @@
-# @meshobj/server
+# @meshql-ts/server
 
-The core server implementation for meshobj, providing a flexible and configurable Express-based server that combines GraphQL and REST APIs with multiple database backends.
+The core server implementation for meshql-ts, providing a flexible and configurable Express-based server that combines GraphQL and REST APIs with multiple database backends.
 
 ## Features
 
@@ -15,9 +15,9 @@ The core server implementation for meshobj, providing a flexible and configurabl
 ## Installation
 
 ```bash
-npm install @meshobj/server
+npm install @meshql-ts/server
 # or
-yarn add @meshobj/server
+yarn add @meshql-ts/server
 ```
 
 ## Usage
@@ -25,11 +25,11 @@ yarn add @meshobj/server
 ### Basic Setup
 
 ```typescript
-import { init } from '@meshobj/server';
-import { SQLitePlugin } from '@meshobj/sqlite_repo';
-import { MongoPlugin } from '@meshobj/mongo_repo';
-import { MySQLPlugin } from '@meshobj/mysql_repo';
-import { PostgresPlugin } from '@meshobj/postgres_repo';
+import { init } from '@meshql-ts/server';
+import { SQLitePlugin } from '@meshql-ts/sqlite_repo';
+import { MongoPlugin } from '@meshql-ts/mongo_repo';
+import { MySQLPlugin } from '@meshql-ts/mysql_repo';
+import { PostgresPlugin } from '@meshql-ts/postgres_repo';
 
 const config = {
   port: 4044,

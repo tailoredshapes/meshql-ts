@@ -1,5 +1,5 @@
 {
-    "name": "@meshobj/sqlite_repo",
+    "name": "@tailoredshapes/meshql-sqlite_repo",
     "version": "0.2.0",
     "type": "commonjs",
     "main": "./dist/index.js",
@@ -14,11 +14,11 @@
     "author": "Tom Marsh",
     "license": "MIT",
     "dependencies": {
-        "@meshobj/auth": "^0.2.0",
-        "@meshobj/cert": "^0.2.0",
-        "@meshobj/common": "^0.2.0",
-        "@meshobj/graphlette": "^0.2.0",
-        "@meshobj/server": "^0.2.0",
+        "@tailoredshapes/meshql-auth": "^0.2.0",
+        "@tailoredshapes/meshql-cert": "^0.2.0",
+        "@tailoredshapes/meshql-common": "^0.2.0",
+        "@tailoredshapes/meshql-graphlette": "^0.2.0",
+        "@tailoredshapes/meshql-server": "^0.2.0",
         "@types/typescript": "^2.0.0",
         "handlebars": "^4.7.8",
         "log4js": "^6.9.1",

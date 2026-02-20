@@ -3,7 +3,7 @@ import Log4js from 'log4js';
 import { processSelectionSet, addTimestampToQuery } from './subgraph.js';
 import { FieldNode, GraphQLSchema } from 'graphql';
 
-let logger = Log4js.getLogger('meshobj/dataLoaderFactory');
+let logger = Log4js.getLogger('meshql-ts/dataLoaderFactory');
 
 type HeadersType = {
     'Content-Type': string;

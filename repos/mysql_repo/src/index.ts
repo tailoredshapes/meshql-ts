@@ -2,13 +2,13 @@ export { MySQLRepository } from './mysqlRepo';
 export { MySQLSearcher } from './mysqlSearcher';
 
 import { createPool, PoolOptions, Pool as MySQLPool } from 'mysql2/promise';
-import { Repository } from '@meshobj/common';
+import { Repository } from '@tailoredshapes/meshql-common';
 import { MySQLRepository } from './mysqlRepo';
-import { DTOFactory } from '@meshobj/graphlette';
-import { Auth } from '@meshobj/auth';
+import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
+import { Auth } from '@tailoredshapes/meshql-auth';
 import { MySQLSearcher } from './mysqlSearcher';
-import { StorageConfig } from '@meshobj/server';
-import { Plugin } from '@meshobj/server';
+import { StorageConfig } from '@tailoredshapes/meshql-server';
+import { Plugin } from '@tailoredshapes/meshql-server';
 /**
  * Creates and returns a MySQL Pool connection.
  */

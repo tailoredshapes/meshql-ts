@@ -1,11 +1,11 @@
 import { Application, Request, Response } from 'express';
 import { graphqlHTTP } from 'express-graphql';
 import { buildSchema } from 'graphql';
-import { Searcher } from '@meshobj/common';
+import { Searcher } from '@tailoredshapes/meshql-common';
 import Log4js from 'log4js';
 import DataLoader from 'dataloader';
 
-const logger = Log4js.getLogger('meshobj/graphlette');
+const logger = Log4js.getLogger('meshql-ts/graphlette');
 
 function createHealthCheck(repo: Searcher) {
     const health = async (_req: Request, res: Response) => {

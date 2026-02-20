@@ -1,9 +1,9 @@
 import { Pool, RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { v4 as uuid } from 'uuid';
-import { Envelope, Id, Payload, Repository } from '@meshobj/common';
+import { Envelope, Id, Payload, Repository } from '@tailoredshapes/meshql-common';
 import Log4js from 'log4js';
 
-const logger = Log4js.getLogger('meshobj/mysql_repo');
+const logger = Log4js.getLogger('meshql-ts/mysql_repo');
 
 export interface EnvelopeRow extends RowDataPacket {
     id: string;

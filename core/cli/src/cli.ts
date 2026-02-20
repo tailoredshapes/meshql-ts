@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 
 import yargs from 'yargs';
-import { init, Config } from '@meshobj/server';
-import { SQLitePlugin } from '@meshobj/sqlite_repo';
-import { MongoPlugin } from '@meshobj/mongo_repo';
-import { MySQLPlugin } from '@meshobj/mysql_repo';
-import { PostgresPlugin } from '@meshobj/postgres_repo';
+import { init, Config } from '@tailoredshapes/meshql-server';
+import { SQLitePlugin } from '@tailoredshapes/meshql-sqlite_repo';
+import { MongoPlugin } from '@tailoredshapes/meshql-mongo_repo';
+import { MySQLPlugin } from '@tailoredshapes/meshql-mysql_repo';
+import { PostgresPlugin } from '@tailoredshapes/meshql-postgres_repo';
 const parser = require('@pushcorn/hocon-parser');
-import { configureLogging, getLogger } from '@meshobj/common';
+import { configureLogging, getLogger } from '@tailoredshapes/meshql-common';
 
 // Configure logging
 configureLogging('debug');
-const log = getLogger('meshobj/cli');
+const log = getLogger('meshql-ts/cli');
 
 export default async function startServer(configPath?: string) {
     const argv = await yargs(process.argv.slice(2))

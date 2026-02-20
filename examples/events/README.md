@@ -161,7 +161,7 @@ GET /processedevent/graph
 
 ```bash
 # 1. Install and build
-cd /tank/repos/meshobj  # Or your monorepo root
+cd /tank/repos/meshql-ts  # Or your monorepo root
 yarn install
 yarn build
 

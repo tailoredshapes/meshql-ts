@@ -1,6 +1,6 @@
-import { Config } from '@meshobj/server';
-import { MongoConfig } from '@meshobj/mongo_repo';
-import { PostgresConfig } from '@meshobj/postgres_repo';
+import { Config } from '@tailoredshapes/meshql-server';
+import { MongoConfig } from '@tailoredshapes/meshql-mongo_repo';
+import { PostgresConfig } from '@tailoredshapes/meshql-postgres_repo';
 import fs from 'fs';
 
 const PORT = 4055;

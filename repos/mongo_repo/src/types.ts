@@ -1,4 +1,4 @@
-import { Envelope } from '@meshobj/common';
+import { Envelope } from '@tailoredshapes/meshql-common';
 import { Document, WithId } from 'mongodb';
 
 export type Payload = {

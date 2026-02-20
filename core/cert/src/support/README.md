@@ -10,7 +10,7 @@ Your hooks file must set these properties on the world:
 
 ```typescript
 import { Before, After, AfterAll } from '@cucumber/cucumber';
-import { TestWorld } from '@meshobj/common/test/support/world';
+import { TestWorld } from '@meshql-ts/common/test/support/world';
 
 let container: YourDatabaseContainer;
 let pools: YourConnectionPool[] = [];
@@ -60,4 +60,4 @@ See `packages/postgres_repo/test/support/hooks.ts` for a complete example.
 yarn test:bdd
 ```
 
-The common steps are automatically loaded from `@meshobj/common/test/steps`.
+The common steps are automatically loaded from `@meshql-ts/common/test/steps`.

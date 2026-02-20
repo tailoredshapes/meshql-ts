@@ -1,7 +1,7 @@
 import { Before, AfterAll, BeforeAll } from '@cucumber/cucumber';
 import { compile } from 'handlebars';
 import Log4js from 'log4js';
-import { IntegrationWorld, SearcherTestTemplates } from '@meshobj/cert';
+import { IntegrationWorld, SearcherTestTemplates } from '@tailoredshapes/meshql-cert';
 import { MySQLConfig, MySQLPlugin } from '../../../src';
 import { MySqlContainer, StartedMySqlContainer } from '@testcontainers/mysql';
 

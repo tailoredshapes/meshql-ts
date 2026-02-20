@@ -1,11 +1,11 @@
-import { Searcher } from '@meshobj/common';
-import { Auth } from '@meshobj/auth';
-import { DTOFactory } from '@meshobj/graphlette';
+import { Searcher } from '@tailoredshapes/meshql-common';
+import { Auth } from '@tailoredshapes/meshql-auth';
+import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
 import Handlebars from 'handlebars';
 import { getLogger } from 'log4js';
 import { Pool } from 'pg';
 
-const logger = getLogger('meshobj/postgressearcher');
+const logger = getLogger('meshql-ts/postgressearcher');
 
 export class PostgresSearcher implements Searcher {
     private pool: Pool;

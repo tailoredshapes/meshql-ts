@@ -1,6 +1,6 @@
 import { Given, When, Then, DataTable } from '@cucumber/cucumber';
 import { expect } from 'chai';
-import { callSubgraph } from '@meshobj/graphlette';
+import { callSubgraph } from '@tailoredshapes/meshql-graphlette';
 import Handlebars from 'handlebars';
 import { FarmTestWorld } from '../support/worlds';
 

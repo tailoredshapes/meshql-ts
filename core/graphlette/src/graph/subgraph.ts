@@ -12,7 +12,7 @@ import {
     visitWithTypeInfo,
 } from 'graphql';
 
-let logger = Log4js.getLogger('meshobj/subgraph');
+let logger = Log4js.getLogger('meshql-ts/subgraph');
 
 type HeadersType = {
     'Content-Type': string;

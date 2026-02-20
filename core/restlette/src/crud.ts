@@ -1,9 +1,9 @@
-import { Auth } from '@meshobj/auth';
+import { Auth } from '@tailoredshapes/meshql-auth';
 import Log4js from 'log4js';
-import { Envelope, Repository, Validator } from '@meshobj/common';
+import { Envelope, Repository, Validator } from '@tailoredshapes/meshql-common';
 import { Request, Response } from 'express';
 
-const logger = Log4js.getLogger('meshobj/restlette');
+const logger = Log4js.getLogger('meshql-ts/restlette');
 
 export class Crud {
     private _authorizer: Auth;

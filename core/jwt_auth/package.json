@@ -1,5 +1,5 @@
 {
-    "name": "@meshobj/jwt_auth",
+    "name": "@tailoredshapes/meshql-jwt_auth",
     "version": "0.2.0",
     "type": "commonjs",
     "main": "./dist/index.js",
@@ -26,8 +26,8 @@
         "vitest": "^3.0.1"
     },
     "dependencies": {
-        "@meshobj/auth": "^0.2.0",
-        "@meshobj/common": "^0.2.0",
+        "@tailoredshapes/meshql-auth": "^0.2.0",
+        "@tailoredshapes/meshql-common": "^0.2.0",
         "express": "^4.21.2",
         "jsonwebtoken": "^9.0.2",
         "log4js": "^6.9.1"

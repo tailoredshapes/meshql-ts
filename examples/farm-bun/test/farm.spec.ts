@@ -1,7 +1,7 @@
 import { DockerComposeEnvironment, StartedDockerComposeEnvironment, Wait } from 'testcontainers';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import path from 'path';
-import { callSubgraph } from '@meshobj/graphlette';
+import { callSubgraph } from '@tailoredshapes/meshql-graphlette';
 import { Document, OpenAPIClient, OpenAPIClientAxios } from 'openapi-client-axios';
 import { defineConfig } from 'vitest/config';
 

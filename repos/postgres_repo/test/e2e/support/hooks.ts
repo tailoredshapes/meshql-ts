@@ -1,10 +1,10 @@
 import { Before, AfterAll, BeforeAll } from '@cucumber/cucumber';
 import Log4js from 'log4js';
-import { FarmTestWorld, DBFactories, FarmQueries} from '@meshobj/cert';
+import { FarmTestWorld, DBFactories, FarmQueries} from '@tailoredshapes/meshql-cert';
 import { PostgresConfig, PostgresPlugin } from '../../../src';
-import { Plugin } from '@meshobj/server';
+import { Plugin } from '@tailoredshapes/meshql-server';
 import { Server } from 'node:http';
-import { FarmEnv } from '@meshobj/cert';
+import { FarmEnv } from '@tailoredshapes/meshql-cert';
 import * as jwt from 'jsonwebtoken';
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 

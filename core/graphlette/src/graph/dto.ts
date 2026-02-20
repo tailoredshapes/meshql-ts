@@ -1,7 +1,7 @@
 import { processContext, callSubgraph } from './subgraph.js';
 import Log4js from 'log4js';
 import { GraphQLArgs } from 'graphql/graphql';
-import { Resolver } from '@meshobj/common';
+import { Resolver } from '@tailoredshapes/meshql-common';
 import { createSubgraphDataLoader } from './dataLoaderFactory.js';
 import DataLoader from 'dataloader';
 

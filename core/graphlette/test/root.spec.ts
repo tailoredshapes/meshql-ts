@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Mock, It } from 'moq.ts';
 import { buildSchema, graphql } from 'graphql';
 import { context } from '../src/graph/root';
-import { RootConfig, Searcher } from '@meshobj/common';
-import { Auth } from '@meshobj/auth';
+import { RootConfig, Searcher } from '@tailoredshapes/meshql-common';
+import { Auth } from '@tailoredshapes/meshql-auth';
 import fetchMock from 'fetch-mock';
 
 const createdAt = new Date();

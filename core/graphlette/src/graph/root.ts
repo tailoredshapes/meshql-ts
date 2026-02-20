@@ -1,11 +1,11 @@
 import { DTOFactory } from './dto.js';
 import HandleBars from 'handlebars';
-import { Searcher, RootConfig } from '@meshobj/common';
-import { Auth } from '@meshobj/auth';
+import { Searcher, RootConfig } from '@tailoredshapes/meshql-common';
+import { Auth } from '@tailoredshapes/meshql-auth';
 
 import Log4js from 'log4js';
 
-const logger = Log4js.getLogger('meshobj/graphlette/root');
+const logger = Log4js.getLogger('meshql-ts/graphlette/root');
 
 export function context(repo: Searcher, authorizer: Auth, config: RootConfig) {
     let dtoF = new DTOFactory(config.resolvers);

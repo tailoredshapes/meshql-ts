@@ -1,5 +1,5 @@
 {
-  "name": "@meshobj/deploy",
+  "name": "@tailoredshapes/meshql-deploy",
   "version": "0.1.0",
   "type": "commonjs",
   "main": "./dist/index.js",
@@ -9,8 +9,8 @@
     "test": "vitest --run --passWithNoTests"
   },
   "dependencies": {
-    "@meshobj/common": "workspace:*",
-    "@meshobj/server": "workspace:*",
+    "@tailoredshapes/meshql-common": "workspace:*",
+    "@tailoredshapes/meshql-server": "workspace:*",
     "js-yaml": "^4.1.0"
   },
   "devDependencies": {

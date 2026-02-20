@@ -1,5 +1,5 @@
 {
-    "name": "@meshobj/casbin_auth",
+    "name": "@tailoredshapes/meshql-casbin_auth",
     "version": "0.2.0",
     "type": "commonjs",
     "main": "./dist/index.js",
@@ -24,8 +24,8 @@
         "test": "vitest --run --coverage"
     },
     "dependencies": {
-        "@meshobj/auth": "^0.2.0",
-        "@meshobj/common": "^0.2.0",
+        "@tailoredshapes/meshql-auth": "^0.2.0",
+        "@tailoredshapes/meshql-common": "^0.2.0",
         "casbin": "^5.36.0"
     },
     "gitHead": "b6648bde930e8a322c8d1a966e152bc83fa0ad31"

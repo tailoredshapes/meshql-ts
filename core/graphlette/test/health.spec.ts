@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import express from 'express';
-import { Searcher } from '@meshobj/common';
+import { Searcher } from '@tailoredshapes/meshql-common';
 import { init } from '../src/index';
 
 describe('Health Check Endpoints', () => {

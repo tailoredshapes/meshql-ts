@@ -1,5 +1,5 @@
 {
-    "name": "@meshobj/graphlette",
+    "name": "@tailoredshapes/meshql-graphlette",
     "version": "0.2.0",
     "type": "commonjs",
     "main": "./dist/index.js",
@@ -26,8 +26,8 @@
         "vitest": "^2.1.8"
     },
     "dependencies": {
-        "@meshobj/auth": "^0.2.0",
-        "@meshobj/common": "^0.2.0",
+        "@tailoredshapes/meshql-auth": "^0.2.0",
+        "@tailoredshapes/meshql-common": "^0.2.0",
         "dataloader": "^2.2.2",
         "express": "^4.21.2",
         "express-graphql": "^0.12.0",

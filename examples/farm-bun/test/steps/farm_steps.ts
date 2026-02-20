@@ -1,6 +1,6 @@
 import { Given, When, Then } from '@cucumber/cucumber';
 import { FarmWorld } from '../support/world';
-import { callSubgraph } from '@meshobj/graphlette';
+import { callSubgraph } from '@tailoredshapes/meshql-graphlette';
 import { expect } from 'chai';
 
 Given('the farm service is running in Docker', async function(this: FarmWorld) {

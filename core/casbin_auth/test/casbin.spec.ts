@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { CasbinAuth } from '../src';
 import { Enforcer, newEnforcer } from 'casbin';
-import { Auth } from '@meshobj/auth';
-import { Envelope } from '@meshobj/common';
+import { Auth } from '@tailoredshapes/meshql-auth';
+import { Envelope } from '@tailoredshapes/meshql-common';
 
 // Mock casbin module
 vi.mock('casbin', () => ({

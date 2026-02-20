@@ -2,9 +2,9 @@ import express, { RequestHandler, Router } from 'express';
 import swaggerUi, { JsonObject } from 'swagger-ui-express';
 import { Crud } from './crud.js';
 import { paths } from './swagger';
-import { Repository, getLogger } from '@meshobj/common';
+import { Repository, getLogger } from '@tailoredshapes/meshql-common';
 
-const logger = getLogger('meshobj/restlette');
+const logger = getLogger('meshql-ts/restlette');
 
 const swaggerOptions = (apiPath: string, port: number, schema: Record<string, any>, host: string = 'localhost') => ({
     openapi: '3.0.0',

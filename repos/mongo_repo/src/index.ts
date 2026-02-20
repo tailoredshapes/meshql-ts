@@ -4,11 +4,11 @@ export { MongoRepository } from './mongoRepo';
 import { MongoSearcher } from './mongoSearcher';
 import { MongoRepository } from './mongoRepo';
 import { MongoClient, Collection } from 'mongodb';
-import { StorageConfig } from '@meshobj/server';
-import { Envelope } from '@meshobj/common';
-import { Auth } from '@meshobj/auth';
-import { DTOFactory } from '@meshobj/graphlette';
-import { Plugin } from '@meshobj/server';
+import { StorageConfig } from '@tailoredshapes/meshql-server';
+import { Envelope } from '@tailoredshapes/meshql-common';
+import { Auth } from '@tailoredshapes/meshql-auth';
+import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
+import { Plugin } from '@tailoredshapes/meshql-server';
 /**
  * Builds and returns a MongoDB Collection for the specified MongoConfig.
  */

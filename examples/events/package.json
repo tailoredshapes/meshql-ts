@@ -1,5 +1,5 @@
 {
-    "name": "@meshobj/events-example",
+    "name": "@tailoredshapes/meshql-events-example",
     "version": "0.1.0",
     "private": true,
     "main": "dist/index.js",
@@ -10,16 +10,16 @@
         "slow-test": "vitest --passWithNoTests --run --hookTimeout=120000"
     },
     "dependencies": {
-        "@meshobj/cli": "workspace:*",
-        "@meshobj/common": "workspace:*",
-        "@meshobj/mongo_repo": "workspace:*",
-        "@meshobj/server": "workspace:*",
+        "@tailoredshapes/meshql-cli": "workspace:*",
+        "@tailoredshapes/meshql-common": "workspace:*",
+        "@tailoredshapes/meshql-mongo_repo": "workspace:*",
+        "@tailoredshapes/meshql-server": "workspace:*",
         "axios": "^1.6.7",
         "js-yaml": "^4.1.0",
         "kafkajs": "^2.2.4"
     },
     "devDependencies": {
-        "@meshobj/graphlette": "workspace:^",
+        "@tailoredshapes/meshql-graphlette": "workspace:^",
         "@testcontainers/kafka": "^11.7.2",
         "@testcontainers/mongodb": "^11.7.2",
         "@types/node": "^20.0.0",

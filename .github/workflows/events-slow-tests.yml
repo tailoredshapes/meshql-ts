@@ -48,19 +48,19 @@ jobs:
       uses: helm/kind-action@v1
       with:
         version: v0.24.0
-        cluster_name: meshobj-examples-events
-        config: examples/events/k8s/meshobj-examples-events-cluster.yaml
+        cluster_name: meshql-ts-examples-events
+        config: examples/events/k8s/meshql-ts-examples-events-cluster.yaml
 
     - name: Verify kind cluster
       run: |
-        kubectl cluster-info --context kind-meshobj-examples-events
+        kubectl cluster-info --context kind-meshql-ts-examples-events
         kubectl get nodes
 
     - name: Build and load events Docker image
       working-directory: .
       run: |
-        docker build -t meshobj/events:latest -f examples/events/generated/events/Dockerfile .
-        kind load docker-image meshobj/events:latest --name meshobj-examples-events
+        docker build -t meshql-ts/events:latest -f examples/events/generated/events/Dockerfile .
+        kind load docker-image meshql-ts/events:latest --name meshql-ts-examples-events
 
     - name: Deploy services to kind
       working-directory: examples/events
@@ -71,12 +71,12 @@ jobs:
       working-directory: examples/events
       run: |
         echo "Waiting for namespace..."
-        kubectl wait --for=jsonpath='{.status.phase}'=Active namespace/meshobj-examples-events --timeout=30s
+        kubectl wait --for=jsonpath='{.status.phase}'=Active namespace/meshql-ts-examples-events --timeout=30s
 
         echo "Waiting for MongoDB and Redpanda (parallel)..."
-        kubectl wait --for=condition=ready pod -l app=mongodb -n meshobj-examples-events --timeout=120s &
+        kubectl wait --for=condition=ready pod -l app=mongodb -n meshql-ts-examples-events --timeout=120s &
         MONGO_PID=$!
-        kubectl wait --for=condition=ready pod -l app=redpanda -n meshobj-examples-events --timeout=120s &
+        kubectl wait --for=condition=ready pod -l app=redpanda -n meshql-ts-examples-events --timeout=120s &
         REDPANDA_PID=$!
 
         wait $MONGO_PID || { echo "MongoDB failed to start"; exit 1; }
@@ -84,22 +84,22 @@ jobs:
         echo "✓ MongoDB and Redpanda ready"
 
         echo "Waiting for Debezium..."
-        kubectl wait --for=condition=available deployment/debezium -n meshobj-examples-events --timeout=120s
+        kubectl wait --for=condition=available deployment/debezium -n meshql-ts-examples-events --timeout=120s
 
         echo "Waiting for Events service..."
-        kubectl wait --for=condition=available deployment/events -n meshobj-examples-events --timeout=300s
+        kubectl wait --for=condition=available deployment/events -n meshql-ts-examples-events --timeout=300s
 
     - name: Show pod status
       if: always()
       run: |
         echo "=== Pod Status ==="
-        kubectl get pods -n meshobj-examples-events
+        kubectl get pods -n meshql-ts-examples-events
         echo ""
         echo "=== Events Logs ==="
-        kubectl logs -n meshobj-examples-events -l app=events --tail=50 || true
+        kubectl logs -n meshql-ts-examples-events -l app=events --tail=50 || true
         echo ""
         echo "=== Debezium Logs ==="
-        kubectl logs -n meshobj-examples-events -l app=debezium --tail=50 || true
+        kubectl logs -n meshql-ts-examples-events -l app=debezium --tail=50 || true
 
     - name: Run BDD tests
       working-directory: examples/events
@@ -108,4 +108,4 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        kubectl delete namespace meshobj-examples-events --wait=false || true
+        kubectl delete namespace meshql-ts-examples-events --wait=false || true

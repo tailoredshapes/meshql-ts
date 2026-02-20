@@ -1,5 +1,5 @@
 {
-    "name": "meshobj",
+    "name": "@tailoredshapes/meshql-ts",
     "private": true,
     "workspaces": [
         "core/*",

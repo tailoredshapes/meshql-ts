@@ -1,6 +1,6 @@
 import { Kafka, logLevel } from 'kafkajs';
 import axios from 'axios';
-import { getLogger } from '@meshobj/common';
+import { getLogger } from '@tailoredshapes/meshql-common';
 
 const log = getLogger('events/processor');
 

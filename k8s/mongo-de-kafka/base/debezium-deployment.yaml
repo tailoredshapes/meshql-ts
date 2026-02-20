@@ -21,7 +21,7 @@ spec:
         - |
           set -e
           echo "Waiting for MongoDB PRIMARY..."
-          MONGO_HOST="mongodb-0.mongodb-headless.meshobj-examples-events.svc.cluster.local:27017"
+          MONGO_HOST="mongodb-0.mongodb-headless.meshql-ts-examples-events.svc.cluster.local:27017"
 
           for i in {1..60}; do
             if mongosh --host "$MONGO_HOST" --quiet --eval "rs.status().members.find(m => m.stateStr === 'PRIMARY')" 2>/dev/null | grep -q "PRIMARY"; then
@@ -41,7 +41,7 @@ spec:
           fi
 
           echo "Waiting for Redpanda..."
-          REDPANDA_HOST="redpanda-0.redpanda-headless.meshobj-examples-events.svc.cluster.local"
+          REDPANDA_HOST="redpanda-0.redpanda-headless.meshql-ts-examples-events.svc.cluster.local"
           until timeout 2 bash -c "echo > /dev/tcp/$REDPANDA_HOST/9092" 2>/dev/null; do
             echo "Waiting for Redpanda..."
             sleep 2

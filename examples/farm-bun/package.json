@@ -12,13 +12,13 @@
         "perf:check": "performance/scripts/wait-for-services.sh"
     },
     "dependencies": {
-        "@meshobj/cli": "workspace:*",
+        "@tailoredshapes/meshql-cli": "workspace:*",
         "axios": "^1.6.7",
         "js-yaml": "^4.1.0"
     },
     "devDependencies": {
         "@cucumber/cucumber": "^12.2.0",
-        "@meshobj/graphlette": "workspace:^",
+        "@tailoredshapes/meshql-graphlette": "workspace:^",
         "@types/chai": "^4.3.11",
         "@types/node": "^20.0.0",
         "c8": "^10.1.3",

@@ -44,26 +44,26 @@ MeshQL is composed of several key packages, each serving a specific purpose:
 
 ### Main Packages
 
-- [@meshobj/cli](packages/cli/README.md) - Command-line interface for running and configuring MeshQL servers
-- [@meshobj/server](packages/server/README.md) - Core server implementation with GraphQL and REST support
-- [@meshobj/merminator](packages/merminator/README.md) - Configuration generator from Mermaid diagrams
+- [@meshql-ts/cli](packages/cli/README.md) - Command-line interface for running and configuring MeshQL servers
+- [@meshql-ts/server](packages/server/README.md) - Core server implementation with GraphQL and REST support
+- [@meshql-ts/merminator](packages/merminator/README.md) - Configuration generator from Mermaid diagrams
 
 ### Database Plugins
 
-- [@meshobj/mongo_repo](packages/mongo_repo/README.md) - MongoDB integration
-- [@meshobj/postgres_repo](packages/postgres_repo/README.md) - PostgreSQL integration
-- [@meshobj/mysql_repo](packages/mysql_repo/README.md) - MySQL integration
-- [@meshobj/sqlite_repo](packages/sqlite_repo/README.md) - SQLite integration
+- [@meshql-ts/mongo_repo](packages/mongo_repo/README.md) - MongoDB integration
+- [@meshql-ts/postgres_repo](packages/postgres_repo/README.md) - PostgreSQL integration
+- [@meshql-ts/mysql_repo](packages/mysql_repo/README.md) - MySQL integration
+- [@meshql-ts/sqlite_repo](packages/sqlite_repo/README.md) - SQLite integration
 
 ### API Components
 
-- [@meshobj/graphlette](packages/graphlette/README.md) - GraphQL endpoint generator and resolver
-- [@meshobj/restlette](packages/restlette/README.md) - REST API endpoint generator
+- [@meshql-ts/graphlette](packages/graphlette/README.md) - GraphQL endpoint generator and resolver
+- [@meshql-ts/restlette](packages/restlette/README.md) - REST API endpoint generator
 
 ### Authentication & Authorization
 
-- [@meshobj/jwt_auth](packages/jwt_auth/README.md) - JWT-based authentication
-- [@meshobj/casbin_auth](packages/casbin_auth/README.md) - CASBIN-based authorization
+- [@meshql-ts/jwt_auth](packages/jwt_auth/README.md) - JWT-based authentication
+- [@meshql-ts/casbin_auth](packages/casbin_auth/README.md) - CASBIN-based authorization
 
 ## Basic Operation Flow
 
@@ -241,7 +241,7 @@ For detailed configuration options, see the respective database plugin READMEs.
 
 ### 3. API Configuration
 
-For detailed API configuration examples, see the [@meshobj/server documentation](packages/server/README.md).
+For detailed API configuration examples, see the [@meshql-ts/server documentation](packages/server/README.md).
 
 ## Development
 

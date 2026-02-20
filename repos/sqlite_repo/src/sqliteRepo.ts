@@ -1,5 +1,5 @@
 import { v4 as uuid } from 'uuid';
-import { Envelope, Id, Repository } from '@meshobj/common';
+import { Envelope, Id, Repository } from '@tailoredshapes/meshql-common';
 import { Database } from 'sqlite';
 
 export class SQLiteRepository implements Repository {

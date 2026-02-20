@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 // deploy.ts - Type-safe deployment configuration for events example
 
-import { Service, Database, Deployment } from '@meshobj/deploy';
+import { Service, Database, Deployment } from '@tailoredshapes/meshql-deploy';
 import * as path from 'path';
 
 // MongoDB database - NO directConnection (replica set required for Debezium)

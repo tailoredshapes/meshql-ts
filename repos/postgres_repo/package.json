@@ -40,7 +40,7 @@
         "handlebars": "^4.7.8",
         "log4js": "^6.9.1",
         "pg": "^8.13.1",
-        "uuid": "^11.0.3"
+        "uuid": "^14.0.0"
     },
     "scripts": {
         "build": "tsc",

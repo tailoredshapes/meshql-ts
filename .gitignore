@@ -95,3 +95,6 @@ coverage/
 **/performance/temp/
 *.jtl
 jmeter.log
+
+# git worktrees (agent-managed isolated workspaces)
+.worktrees/

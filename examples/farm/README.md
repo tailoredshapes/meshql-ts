@@ -25,6 +25,33 @@ Each domain maintains its own:
 - **Modular Configuration**: Uses HOCON for flexible, hierarchical configuration
 - **Docker Ready**: Includes Docker and docker-compose setup for easy deployment
 
+### Event-Sourced Entities
+
+Two entities depart from the plain-CRUD pattern the rest of this example uses:
+
+- **`lay_report`** (`POST /lay_report/api`) is a domain event, not a mutable
+  record: `{henId, eggs, timeOfDay}`. It's create-only — `PUT`/`DELETE`
+  against `/lay_report/api/:id` are rejected (`403`) for every caller. A
+  correction, if ever needed, is a new event, not an edit.
+- **`hen_productivity`** (`/hen_productivity/api`, `/hen_productivity/graph`)
+  is a read model folded from `lay_report` events — `{henId, totalEggs,
+  lastLaidAt}`. It's an ordinary restlette+graphlette pair like every other
+  entity here; what's unusual is *who* writes to it: only a `worker`-role
+  caller (simulating the CDC-driven worker described in the
+  `merkql-worker-pipeline` companion spec, which is out of scope for this
+  TS example) may `create`/`update` it. Every other caller gets `403` on
+  every verb.
+
+### Write Authorization
+
+`farm`/`coop`/`hen` stay fully CRUD-able by any caller. `lay_report` is
+create-only for everyone. `hen_productivity` is writable only by the
+`worker` role. This is enforced by a Casbin policy
+(`config/casbin/model.conf`, `config/casbin/policy.csv`) loaded once and
+scoped per-restlette in `auth.ts`'s `buildRestletteAuthOverrides` — see
+that file and `index.ts` for the wiring. GraphQL reads stay open to
+everyone; this only affects REST writes.
+
 ## Getting Started
 
 ### Prerequisites

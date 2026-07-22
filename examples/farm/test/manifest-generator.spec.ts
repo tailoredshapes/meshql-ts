@@ -12,6 +12,7 @@ describe('generate', () => {
         expect(manifest.entities.farm).toBeDefined();
         expect(manifest.entities.coop).toBeDefined();
         expect(manifest.entities.hen).toBeDefined();
+        expect(manifest.entities.hen_productivity).toBeDefined();
     });
 
     it('graph surface has path, kind, and inlined schema text', () => {

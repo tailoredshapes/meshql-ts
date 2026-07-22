@@ -49,4 +49,15 @@ describe('manifest conformance', () => {
         }
         expect(seen).toBe(Object.keys(manifest.entities).length);
     });
+
+    it('hen_productivity advertises both graph and api surfaces, same as every other entity', () => {
+        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+        const productivity = manifest.entities.hen_productivity;
+
+        expect(productivity, 'hen_productivity missing from manifest').toBeDefined();
+        expect(productivity.surfaces.graph.kind).toBe('graphql');
+        expect(productivity.surfaces.graph.path).toBe('/hen_productivity/graph');
+        expect(productivity.surfaces.api.kind).toBe('rest');
+        expect(productivity.surfaces.api.path).toBe('/hen_productivity/api');
+    });
 });

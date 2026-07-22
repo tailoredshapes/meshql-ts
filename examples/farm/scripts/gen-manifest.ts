@@ -8,4 +8,6 @@ const manifest = generate(configDir);
 const outputPath = path.join(configDir, 'manifest.json');
 
 fs.writeFileSync(outputPath, JSON.stringify(manifest, null, 2) + '\n');
-console.log(`Wrote ${outputPath}`);
+console.log(
+    `Wrote ${outputPath} — run \`yarn format\` next; JSON.stringify's array wrapping doesn't match prettier's.`,
+);

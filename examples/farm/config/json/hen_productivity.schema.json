@@ -1,0 +1,23 @@
+{
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["henId", "totalEggs", "lastLaidAt"],
+    "properties": {
+        "id": {
+            "type": "string",
+            "format": "uuid"
+        },
+        "henId": {
+            "type": "string",
+            "format": "uuid"
+        },
+        "totalEggs": {
+            "type": "integer",
+            "minimum": 0
+        },
+        "lastLaidAt": {
+            "type": "string",
+            "format": "date-time"
+        }
+    }
+}

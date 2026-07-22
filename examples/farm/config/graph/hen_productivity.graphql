@@ -1,0 +1,18 @@
+type Hen {
+  name: String!
+  id: ID
+  dob: Date
+}
+
+type Query {
+  getById(id: ID, at: Float): HenProductivity
+  getByHen(id: ID, at: Float): HenProductivity
+}
+
+type HenProductivity {
+  henId: String!
+  totalEggs: Int!
+  lastLaidAt: String
+  hen: Hen
+  id: ID
+}

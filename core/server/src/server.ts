@@ -65,7 +65,11 @@ async function processAuth(config: Config): Promise<Auth> {
     }
 }
 
-export async function init(config: Config, plugins: Record<string, Plugin>): Promise<Application> {
+export async function init(
+    config: Config,
+    plugins: Record<string, Plugin>,
+    restletteAuthOverrides: Record<string, Auth> = {},
+): Promise<Application> {
     const auth: Auth = await processAuth(config);
 
     const app: Application = express();
@@ -99,7 +103,8 @@ export async function init(config: Config, plugins: Record<string, Plugin>): Pro
 
     // Process restlettes
     for (const restlette of config.restlettes) {
-        await processRestlette(restlette, auth, app, config.port, plugins);
+        const restletteAuth = restletteAuthOverrides[restlette.path] ?? auth;
+        await processRestlette(restlette, restletteAuth, app, config.port, plugins);
     }
 
     return app;

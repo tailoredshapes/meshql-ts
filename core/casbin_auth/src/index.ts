@@ -57,7 +57,7 @@ export class CasbinAuth implements Auth {
      * resolved role fall back to the literal "anonymous" subject, so
      * policy.csv can grant/deny unauthenticated callers explicitly.
      */
-    async authorizeAction(credentials: string[], action: Action, _data: Envelope): Promise<boolean> {
+    async authorizeAction(credentials: string[], action: Action): Promise<boolean> {
         const subjects = credentials.length > 0 ? credentials : ['anonymous'];
 
         for (const subject of subjects) {

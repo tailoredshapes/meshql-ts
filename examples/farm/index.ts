@@ -2,8 +2,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { init, Config } from '@tailoredshapes/meshql-server';
 import { MongoPlugin } from '@tailoredshapes/meshql-mongo_repo';
+import { getLogger } from '@tailoredshapes/meshql-common';
 import { mountManifestRoute } from './manifest';
 const parser = require('@pushcorn/hocon-parser');
+
+const log = getLogger('meshql-ts/farm-example');
 
 async function main() {
     const configFile = path.resolve(__dirname, 'config/config.conf');
@@ -16,10 +19,10 @@ async function main() {
     mountManifestRoute(app, manifestJson);
 
     await app.listen(config.port);
-    console.log(`Farm example running on port ${config.port} — manifest at /manifest`);
+    log.info(`Farm example running on port ${config.port} — manifest at /manifest`);
 }
 
 main().catch((err) => {
-    console.error('Failed to start farm example:', err);
+    log.error('Failed to start farm example:', err);
     process.exit(1);
 });

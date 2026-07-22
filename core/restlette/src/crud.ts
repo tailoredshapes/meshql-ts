@@ -1,4 +1,4 @@
-import { Action, Auth } from '@tailoredshapes/meshql-auth';
+import { Auth } from '@tailoredshapes/meshql-auth';
 import Log4js from 'log4js';
 import { Envelope, Repository, Validator } from '@tailoredshapes/meshql-common';
 import { Request, Response } from 'express';

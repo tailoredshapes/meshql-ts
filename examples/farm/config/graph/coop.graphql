@@ -27,7 +27,7 @@ type Hen {
 }
 
 type LayReport {
-  time_of_day: String!
+  timeOfDay: String!
   eggs: Int!
   id: ID
 }

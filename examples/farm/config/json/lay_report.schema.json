@@ -1,17 +1,13 @@
 {
     "type": "object",
     "additionalProperties": false,
-    "required": ["time_of_day", "eggs", "hen_id"],
+    "required": ["henId", "eggs", "timeOfDay"],
     "properties": {
         "id": {
             "type": "string",
             "format": "uuid"
         },
-        "time_of_day": {
-            "type": "string",
-            "enum": ["morning", "afternoon", "evening"]
-        },
-        "hen_id": {
+        "henId": {
             "type": "string",
             "format": "uuid"
         },
@@ -19,6 +15,10 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 3
+        },
+        "timeOfDay": {
+            "type": "string",
+            "enum": ["morning", "afternoon", "evening"]
         }
     }
 }

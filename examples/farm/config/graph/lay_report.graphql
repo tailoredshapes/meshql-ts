@@ -3,7 +3,6 @@ scalar Date
 type Hen {
   name: String!
   id: ID
-  eggs: Int
   dob: Date
 }
 
@@ -13,7 +12,7 @@ type Query {
 }
 
 type LayReport {
-  time_of_day: String!
+  timeOfDay: String!
   eggs: Int!
   hen: Hen
   id: ID

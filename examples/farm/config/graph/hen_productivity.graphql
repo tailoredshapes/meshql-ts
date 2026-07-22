@@ -1,3 +1,5 @@
+scalar Date
+
 type Hen {
   name: String!
   id: ID

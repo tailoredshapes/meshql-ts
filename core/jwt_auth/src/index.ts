@@ -1,4 +1,4 @@
-import { Auth } from '@tailoredshapes/meshql-auth';
+import { Action, Auth } from '@tailoredshapes/meshql-auth';
 import { getLogger } from 'log4js';
 const jwt = require('jsonwebtoken');
 import { Envelope } from '@tailoredshapes/meshql-common';
@@ -36,5 +36,11 @@ export class JWTSubAuthorizer implements Auth {
 
         // Check if any of the credentials match authorized tokens
         return authorizedTokens.some((token) => credentials.includes(token));
+    }
+
+    async authorizeAction(credentials: string[], _action: Action, data: Envelope): Promise<boolean> {
+        // JWTSubAuthorizer has no policy engine of its own — reuse the same
+        // envelope-token ABAC check as isAuthorized, ignoring the verb.
+        return this.isAuthorized(credentials, data);
     }
 }

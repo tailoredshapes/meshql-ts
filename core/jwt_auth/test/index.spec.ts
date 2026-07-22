@@ -72,4 +72,20 @@ describe('JWTSubAuthorizer', () => {
             expect(result).toBe(false);
         });
     });
+
+    describe('authorizeAction', () => {
+        it('delegates to isAuthorized, ignoring the verb', async () => {
+            const envelope: Envelope = { payload: {}, authorized_tokens: ['user1'] };
+
+            expect(await authorizer.authorizeAction(['user1'], 'create', envelope)).toBe(true);
+            expect(await authorizer.authorizeAction(['user1'], 'update', envelope)).toBe(true);
+            expect(await authorizer.authorizeAction(['user1'], 'delete', envelope)).toBe(true);
+            expect(await authorizer.authorizeAction(['someone-else'], 'create', envelope)).toBe(false);
+        });
+
+        it('authorizes everyone when authorized_tokens is unset, for every verb', async () => {
+            const envelope: Envelope = { payload: {} };
+            expect(await authorizer.authorizeAction([], 'create', envelope)).toBe(true);
+        });
+    });
 });

@@ -5,7 +5,7 @@
     "main": "dist/index.js",
     "scripts": {
         "start": "node dist/index.js",
-        "build": "echo 'No build needed for farm example'",
+        "build": "tsc",
         "gen-manifest": "ts-node scripts/gen-manifest.ts",
         "test": "vitest --passWithNoTests --run --hookTimeout=300000",
         "test:bdd": "c8 --reporter=text --reporter=html --reporter=json-summary --reporter=lcov --all=false --exclude='cucumber.js' --exclude='test/**' cucumber-js",
@@ -13,8 +13,11 @@
         "perf:check": "performance/scripts/wait-for-services.sh"
     },
     "dependencies": {
-        "@tailoredshapes/meshql-cli": "workspace:*",
+        "@pushcorn/hocon-parser": "^1.3.1",
+        "@tailoredshapes/meshql-mongo_repo": "workspace:^",
+        "@tailoredshapes/meshql-server": "workspace:^",
         "axios": "^1.6.7",
+        "express": "^4.21.2",
         "js-yaml": "^4.1.0"
     },
     "devDependencies": {

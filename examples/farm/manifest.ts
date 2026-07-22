@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { Application } from 'express';
 
 /**
  * Builds the deployment manifest (schemas/manifest.schema.json) from
@@ -38,4 +39,11 @@ export function generate(configDir: string): Record<string, any> {
     }
 
     return { meshql: 1, entities, surfaces: {} };
+}
+
+/** Mounts GET /manifest, serving the given pre-serialized JSON string as-is. */
+export function mountManifestRoute(app: Application, manifestJson: string): void {
+    app.get('/manifest', (_req, res) => {
+        res.type('application/json').send(manifestJson);
+    });
 }

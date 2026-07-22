@@ -63,19 +63,20 @@ node packages/cli/dist/cli.js --config path/to/config.conf
 
 ### Monorepo Structure
 
-The project is organized into three workspaces:
+The project is organized into three workspaces (package scope is `@tailoredshapes/meshql-*`; the `packages/` directory was renamed to `core/` and the npm scope moved from `@meshobj`/`@meshql-ts` to `@tailoredshapes/meshql-ts` — some older docs/examples may still say otherwise):
 
 ```
-packages/        # Core framework components
-├── server/
-├── cli/
-├── common/
-├── graphlette/
-├── restlette/
-├── auth/
-├── jwt_auth/
-├── casbin_auth/
-└── merminator/
+core/             # Core framework components
+├── server/       # @tailoredshapes/meshql-server
+├── cli/          # @tailoredshapes/meshql-cli
+├── deploy/       # @tailoredshapes/meshql-deploy
+├── common/       # @tailoredshapes/meshql-common
+├── graphlette/   # @tailoredshapes/meshql-graphlette
+├── restlette/    # @tailoredshapes/meshql-restlette
+├── cert/         # @tailoredshapes/meshql-cert — shared BDD certification suite
+├── auth/         # @tailoredshapes/meshql-auth
+├── jwt_auth/     # @tailoredshapes/meshql-jwt_auth
+└── casbin_auth/  # @tailoredshapes/meshql-casbin_auth
 
 repos/           # Database backend plugins (pluggable architecture)
 ├── sqlite_repo/
@@ -85,19 +86,21 @@ repos/           # Database backend plugins (pluggable architecture)
 
 examples/        # Example applications
 ├── farm/
+├── farm-bun/
+├── farm-cqrs/
 ├── twofarms/
 └── events/
 ```
 
-### Core Components (packages/)
-1. **@meshql-ts/server** - Express-based server combining GraphQL and REST
-2. **@meshql-ts/cli** - Command-line interface for server management
-3. **@meshql-ts/merminator** - Generates configuration from Mermaid diagrams
-4. **@meshql-ts/graphlette** - GraphQL endpoint generator with relationship resolution
-5. **@meshql-ts/restlette** - REST API generator with OpenAPI docs
-6. **@meshql-ts/auth** - Authentication interfaces
-7. **@meshql-ts/jwt_auth** - JWT token authentication
-8. **@meshql-ts/casbin_auth** - CASBIN role-based authorization
+### Core Components (core/)
+1. **@tailoredshapes/meshql-server** - Express-based server combining GraphQL and REST
+2. **@tailoredshapes/meshql-cli** - Command-line interface for server management
+3. **@tailoredshapes/meshql-cert** - Shared BDD certification suite (`core/cert/features/`) that every storage backend's `Searcher`/`Repository` must pass
+4. **@tailoredshapes/meshql-graphlette** - GraphQL endpoint generator with relationship resolution
+5. **@tailoredshapes/meshql-restlette** - REST API generator with OpenAPI docs
+6. **@tailoredshapes/meshql-auth** - Authentication interfaces
+7. **@tailoredshapes/meshql-jwt_auth** - JWT token authentication
+8. **@tailoredshapes/meshql-casbin_auth** - CASBIN role-based authorization
 
 ### Database Plugins (repos/)
 
@@ -263,6 +266,13 @@ GraphQL endpoints support temporal queries via timestamp arguments for point-in-
 
 ### Cross-Service Resolution
 GraphQL resolvers can query across different services/databases using the resolver configuration.
+
+### Honesty: as-of freshness
+
+The FE should be able to tell how fresh a payload is, so it can show a "pending" state and let the user refresh instead of silently rendering stale data.
+
+- **REST** (`Crud` in `core/restlette/src/crud.ts`): `create`/`read`/`update` responses carry `X-Meshql-Created-At` (ISO-8601, from `envelope.created_at`) and `X-Meshql-Deleted` (`true`/`false`) headers. The JSON body stays payload-only — these are headers, not body fields. Because `create`/`update` respond with a `303` redirect to the resource URL and `fetch()` follows redirects by default, the headers end up visible on the final response either way (the `read` handler that the redirect lands on sets them too).
+- **GraphQL**: every `Searcher.find`/`findAll` implementation (`repos/*/src/*Searcher.ts`) merges `createdAt` (ISO-8601 string) into the returned record right next to the existing `id` merge. graphql-js's `defaultFieldResolver` does a plain object key lookup per field (there's no per-field resolver map for object types here — only root query fields have explicit resolvers, via `DTOFactory`), so a `.graphql` type opts in just by declaring `createdAt: String` — no resolver code needed. Omit the field and it's never selectable. `deleted` is not exposed in GraphQL; search results already exclude deleted/superseded versions.
 
 ## Key Files
 

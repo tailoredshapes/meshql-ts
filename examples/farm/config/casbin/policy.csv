@@ -1,0 +1,13 @@
+p, anonymous, farm, create
+p, anonymous, farm, update
+p, anonymous, farm, delete
+p, anonymous, coop, create
+p, anonymous, coop, update
+p, anonymous, coop, delete
+p, anonymous, hen, create
+p, anonymous, hen, update
+p, anonymous, hen, delete
+p, anonymous, lay_report, create
+p, worker, hen_productivity, create
+p, worker, hen_productivity, update
+g, farm-worker-service, worker

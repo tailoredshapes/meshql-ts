@@ -371,7 +371,7 @@ In `examples/farm/package.json`, add to `"dependencies"` (replacing the `@tailor
 "@pushcorn/hocon-parser": "^1.3.1",
 "express": "^4.21.2"
 ```
-(Match the exact `@pushcorn/hocon-parser` and `express` version ranges already used elsewhere in the workspace — check `core/cli/package.json` and `core/server/package.json` respectively for the currently-pinned versions and use the same ones, rather than the placeholders above, to avoid a second copy drifting.)
+(Match the exact `@pushcorn/hocon-parser` and `express` version ranges already used elsewhere in the workspace — `@pushcorn/hocon-parser` is pinned in `core/cli/package.json`, `express` in `core/server/package.json` — and use the same ones, rather than the placeholders above, to avoid a second copy drifting.)
 
 Run `yarn install` at the repo root after editing to update the lockfile.
 

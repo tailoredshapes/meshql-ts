@@ -46,7 +46,6 @@ describe.skipIf(process.env.CI === 'true').sequential('Farm Service Smoke Test',
                 coops {
                     name
                     hens {
-                        eggs
                         name
                     }
                 }
@@ -134,10 +133,10 @@ async function buildModels() {
     await coop_api.update({ id: coop1_id }, { name: 'purple', farm_id });
 
     const hens = [
-        { name: 'chuck', eggs: 2, coop_id: coop1_id },
-        { name: 'duck', eggs: 0, coop_id: coop1_id },
-        { name: 'euck', eggs: 1, coop_id: coop2_id },
-        { name: 'fuck', eggs: 2, coop_id: coop2_id },
+        { name: 'chuck', coop_id: coop1_id },
+        { name: 'duck', coop_id: coop1_id },
+        { name: 'euck', coop_id: coop2_id },
+        { name: 'fuck', coop_id: coop2_id },
     ];
 
     await Promise.all(hens.map((hen) => hen_api.create(null, hen)));

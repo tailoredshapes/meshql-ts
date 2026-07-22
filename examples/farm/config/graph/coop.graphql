@@ -20,7 +20,6 @@ type Coop {
 
 type Hen {
   name: String!
-  eggs: Int
   dob: Date
   id: ID
   layReports: [LayReport]

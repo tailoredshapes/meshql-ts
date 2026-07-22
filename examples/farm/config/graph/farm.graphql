@@ -19,7 +19,6 @@ type Coop {
 type Hen {
   name: String!
   coop: Coop
-  eggs: Int
   dob: Date
   id: ID
 }

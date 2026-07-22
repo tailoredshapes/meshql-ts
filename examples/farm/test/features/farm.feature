@@ -17,7 +17,6 @@ Feature: Farm Integration Test
           coops {
             name
             hens {
-              eggs
               name
             }
           }

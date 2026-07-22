@@ -34,10 +34,10 @@ Given('I have populated the farm data', async function(this: FarmWorld) {
 
     // Create hens
     const hens = [
-        { name: 'chuck', eggs: 2, coop_id: this.coop1_id },
-        { name: 'duck', eggs: 0, coop_id: this.coop1_id },
-        { name: 'euck', eggs: 1, coop_id: this.coop2_id },
-        { name: 'fuck', eggs: 2, coop_id: this.coop2_id },
+        { name: 'chuck', coop_id: this.coop1_id },
+        { name: 'duck', coop_id: this.coop1_id },
+        { name: 'euck', coop_id: this.coop2_id },
+        { name: 'fuck', coop_id: this.coop2_id },
     ];
 
     await Promise.all(hens.map((hen) => this.hen_api!.create(undefined, hen)));

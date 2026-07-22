@@ -6,6 +6,7 @@
     "scripts": {
         "start": "node dist/index.js",
         "build": "echo 'No build needed for farm example'",
+        "gen-manifest": "ts-node scripts/gen-manifest.ts",
         "test": "vitest --passWithNoTests --run --hookTimeout=300000",
         "test:bdd": "c8 --reporter=text --reporter=html --reporter=json-summary --reporter=lcov --all=false --exclude='cucumber.js' --exclude='test/**' cucumber-js",
         "perf": "performance/scripts/run-perf-tests.sh",

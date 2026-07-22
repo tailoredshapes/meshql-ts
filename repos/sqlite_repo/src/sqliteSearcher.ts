@@ -68,6 +68,7 @@ export class SQLiteSearcher implements Searcher {
 
             if (await this.authorizer.isAuthorized(creds, result)) {
                 result.payload.id = result.id;
+                result.payload.createdAt = new Date(result.created_at).toISOString();
                 return this.dtoFactory.fillOne(result.payload, timestamp);
             }
         }
@@ -98,6 +99,7 @@ export class SQLiteSearcher implements Searcher {
         return authorizedResults.map((row) => {
             const result = row as Envelope;
             result.payload.id = result.id;
+            result.payload.createdAt = new Date(result.created_at as unknown as number).toISOString();
             return result.payload;
         });
     }

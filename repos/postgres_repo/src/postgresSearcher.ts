@@ -69,6 +69,7 @@ export class PostgresSearcher implements Searcher {
 
                 if (await this.authorizer.isAuthorized(creds, row)) {
                     row.payload.id = row.id;
+                    row.payload.createdAt = row.created_at?.toISOString();
                     return this.dtoFactory.fillOne(row.payload, timestamp);
                 }
             }
@@ -101,6 +102,7 @@ export class PostgresSearcher implements Searcher {
 
             return authorizedResults.map((row) => {
                 row.payload.id = row.id;
+                row.payload.createdAt = row.created_at?.toISOString();
                 return row.payload;
             });
         } catch (err) {

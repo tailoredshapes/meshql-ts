@@ -34,6 +34,7 @@ export class Crud {
 
         if (result) {
             logger.debug(`Created: ${JSON.stringify(result)}`);
+            this.setHonestyHeaders(res, result);
             res.status(303).location(`${this._context}/${result.id}`).send();
         } else {
             logger.error(`Failed to create: ${JSON.stringify(doc)}`);
@@ -45,6 +46,18 @@ export class Crud {
         return this._tokens.length > 0 ? this._tokens : await this._authorizer.getAuthToken(req);
     }
 
+    /**
+     * "Honesty" headers: the as-of timestamp and tombstone state, leaked
+     * from the otherwise-internal Envelope so callers can tell how fresh
+     * a payload is.
+     */
+    private setHonestyHeaders(res: Response, envelope: Envelope) {
+        if (envelope.created_at) {
+            res.setHeader('X-Meshql-Created-At', envelope.created_at.toISOString());
+        }
+        res.setHeader('X-Meshql-Deleted', String(Boolean(envelope.deleted)));
+    }
+
     read = async (req: Request, res: Response) => {
         const id = req.params.id;
         const authToken = await this._authorizer.getAuthToken(req);
@@ -53,6 +66,7 @@ export class Crud {
         if (result) {
             res.setHeader('X-Canonical-Id', String(result.id));
             if (await this._authorizer.isAuthorized(authToken, result)) {
+                this.setHonestyHeaders(res, result);
                 res.send(result.payload);
             } else {
                 res.status(403).send({});
@@ -84,6 +98,7 @@ export class Crud {
             if (await this._authorizer.isAuthorized(authToken, current)) {
                 const result = await this._repo.create(envelope);
                 logger.debug(`Updated: ${JSON.stringify(result)}`);
+                this.setHonestyHeaders(res, result);
                 res.status(303).location(`${this._context}/${result.id}`).send();
             } else {
                 res.status(403).send({});

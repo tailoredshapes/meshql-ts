@@ -73,6 +73,9 @@ export class MySQLSearcher implements Searcher {
                 const row = rowToEnvelope(rows[0]);
 
                 if (await this.authorizer.isAuthorized(creds, row)) {
+                    // rowToEnvelope already merges id into row.payload as a
+                    // side effect; createdAt is the only thing missing here.
+                    row.payload.createdAt = row.created_at?.toISOString();
                     return this.dtoFactory.fillOne(row.payload, timestamp);
                 }
             }
@@ -107,6 +110,7 @@ export class MySQLSearcher implements Searcher {
             return authorizedResults.map((row) => {
                 const payload = row.payload;
                 payload.id = row.id;
+                payload.createdAt = new Date(Number(row.created_at)).toISOString();
                 return payload;
             });
         } catch (err) {

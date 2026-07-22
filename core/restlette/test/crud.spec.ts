@@ -90,6 +90,11 @@ describe('Crud', () => {
             expect(response.status).toBe(200); // `303` is returned by the `create` handler
             const payload: { eggs: number; name: string } = await response.json();
             expect(payload.name).toBe('chuck');
+
+            // "honesty" headers: fetch follows the 303 to `read`, which also
+            // sets them, so they're visible on the final response either way.
+            expect(response.headers.get('X-Meshql-Created-At')).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+            expect(response.headers.get('X-Meshql-Deleted')).toBe('false');
         });
 
         it('should list all documents', async () => {
@@ -117,6 +122,8 @@ describe('Crud', () => {
             expect(response.status).toBe(200);
             const payload = await response.json();
             expect(payload.eggs).toBe(9);
+            expect(response.headers.get('X-Meshql-Created-At')).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+            expect(response.headers.get('X-Meshql-Deleted')).toBe('false');
         });
 
         it('should delete a document', async () => {

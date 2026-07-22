@@ -17,7 +17,13 @@ export class MongoSearcher implements Searcher {
     private dbClient: MongoClient;
     private collection: string;
 
-    constructor(db: Collection<Envelope>, dtoFactory: DTOFactory, authorizer: Auth, dbClient: MongoClient, collection: string) {
+    constructor(
+        db: Collection<Envelope>,
+        dtoFactory: DTOFactory,
+        authorizer: Auth,
+        dbClient: MongoClient,
+        collection: string,
+    ) {
         this.authorizer = authorizer;
         this.db = db;
         this.dtoFactory = dtoFactory;
@@ -71,8 +77,9 @@ export class MongoSearcher implements Searcher {
             let result = doc[0];
 
             // Skip authorization check if no credentials provided (matches SQL repos behavior)
-            if (creds.length === 0 || await this.authorizer.isAuthorized(creds, result)) {
+            if (creds.length === 0 || (await this.authorizer.isAuthorized(creds, result))) {
                 result.payload.id = result.id;
+                result.payload.createdAt = result.created_at?.toISOString();
                 return this.dtoFactory.fillOne(result.payload, timestamp);
             } else {
                 logger.trace('Not Authorized');
@@ -124,6 +131,7 @@ export class MongoSearcher implements Searcher {
         return results.map((d) => {
             let r = d as Schema;
             r.payload.id = r.id;
+            r.payload.createdAt = r.created_at?.toISOString();
             return r.payload;
         });
     }

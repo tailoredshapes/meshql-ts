@@ -64,3 +64,13 @@ Feature: Searcher Contract
       | id  |
       | foo |
     Then I should receive exactly 0 results
+
+  Scenario: Search results carry an opt-in createdAt as-of field
+    When I search using template "findById" with parameters:
+      | id    |
+      | Bruce |
+    Then the search result should have a valid createdAt
+    When I search all using template "findAllByType" with parameters:
+      | id |
+      | A  |
+    Then every result should have a valid createdAt

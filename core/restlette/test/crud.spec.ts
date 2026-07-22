@@ -212,6 +212,9 @@ describe('Crud', () => {
                 async isAuthorized(credentials: string[], data: Record<string, any>): Promise<boolean> {
                     return credentials[0] === 'token';
                 },
+                async authorizeAction(): Promise<boolean> {
+                    return true;
+                },
             };
 
             const repo: Repository = new InMemory();
@@ -249,6 +252,76 @@ describe('Crud', () => {
             });
 
             expect(response.status).toBe(403);
+        });
+    });
+
+    describe('verb-aware authorization (authorizeAction)', function () {
+        let app: Application;
+        let server: any;
+
+        const port = 40500;
+
+        afterAll(() => {
+            server.close();
+        });
+
+        beforeAll(async () => {
+            // Denies 'update' specifically, allows every other verb — proves
+            // create/update/remove each pass their own distinct action string.
+            const auth: Auth = {
+                async getAuthToken(): Promise<string[]> {
+                    return ['someone'];
+                },
+                async isAuthorized(): Promise<boolean> {
+                    return true;
+                },
+                async authorizeAction(_credentials: string[], action: string): Promise<boolean> {
+                    return action !== 'update';
+                },
+            };
+
+            const repo: Repository = new InMemory();
+            await repo.create({ id: 'block-update', payload: { name: 'chuck', eggs: 6 } });
+
+            app = express();
+            app.use(express.json());
+
+            const context = '/hens';
+            const validator: Validator = async () => true;
+
+            const crud: Crud = new Crud(auth, repo, validator, context);
+            init(app, crud, context, port, henSchema);
+
+            server = app.listen(port);
+        });
+
+        it('rejects create when authorizeAction denies the "create" verb', async () => {
+            const response = await fetch(`http://localhost:${port}/hens`, {
+                method: 'POST',
+                body: JSON.stringify({ name: 'newHen' }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            // this auth only denies 'update', so create should succeed here
+            expect(response.status).toBe(200);
+        });
+
+        it('rejects update when authorizeAction denies the "update" verb', async () => {
+            const response = await fetch(`http://localhost:${port}/hens/block-update`, {
+                method: 'PUT',
+                body: JSON.stringify({ name: 'chuck', eggs: 9 }),
+                headers: { 'Content-Type': 'application/json' },
+            });
+
+            expect(response.status).toBe(403);
+        });
+
+        it('allows remove when authorizeAction allows the "delete" verb', async () => {
+            const response = await fetch(`http://localhost:${port}/hens/block-update`, {
+                method: 'DELETE',
+            });
+
+            expect(response.status).toBe(200);
         });
     });
 });

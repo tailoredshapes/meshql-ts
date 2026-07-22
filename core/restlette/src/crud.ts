@@ -1,4 +1,4 @@
-import { Auth } from '@tailoredshapes/meshql-auth';
+import { Action, Auth } from '@tailoredshapes/meshql-auth';
 import Log4js from 'log4js';
 import { Envelope, Repository, Validator } from '@tailoredshapes/meshql-common';
 import { Request, Response } from 'express';
@@ -21,6 +21,7 @@ export class Crud {
     }
 
     create = async (req: Request, res: Response) => {
+        const authToken: string[] = await this._authorizer.getAuthToken(req);
         const authorized_tokens: string[] = await this.calculateTokens(req);
         const payload: Record<string, any> = req.body;
 
@@ -30,6 +31,12 @@ export class Crud {
         }
 
         const doc: Envelope = { payload, authorized_tokens };
+
+        if (!(await this._authorizer.authorizeAction(authToken, 'create', doc))) {
+            res.status(403).send({});
+            return;
+        }
+
         const result: Envelope = await this._repo.create(doc);
 
         if (result) {
@@ -95,7 +102,10 @@ export class Crud {
         const current = await this._repo.read(id);
 
         if (current) {
-            if (await this._authorizer.isAuthorized(authToken, current)) {
+            const abacAllowed = await this._authorizer.isAuthorized(authToken, current);
+            const verbAllowed = await this._authorizer.authorizeAction(authToken, 'update', current);
+
+            if (abacAllowed && verbAllowed) {
                 const result = await this._repo.create(envelope);
                 logger.debug(`Updated: ${JSON.stringify(result)}`);
                 this.setHonestyHeaders(res, result);
@@ -114,7 +124,10 @@ export class Crud {
         const tokens = await this._authorizer.getAuthToken(req);
 
         if (result) {
-            if (await this._authorizer.isAuthorized(tokens, result)) {
+            const abacAllowed = await this._authorizer.isAuthorized(tokens, result);
+            const verbAllowed = await this._authorizer.authorizeAction(tokens, 'delete', result);
+
+            if (abacAllowed && verbAllowed) {
                 const success = await this._repo.remove(id);
                 if (success) {
                     logger.debug(`Deleted: ${id}`);

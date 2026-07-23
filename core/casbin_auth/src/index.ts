@@ -29,12 +29,25 @@ export class CasbinAuth implements Auth {
         return new CasbinAuth(this.enforcer, this.jwtAuth, resource);
     }
 
+    /**
+     * Returns the caller's RAW identity (whatever the wrapped `jwtAuth`
+     * resolves — e.g. a JWT `sub`), never a resolved Casbin role.
+     *
+     * This is deliberate, fixing a real bug: this used to return
+     * `enforcer.getRolesForUser(sub[0])` (resolved roles), which then got
+     * written into `envelope.authorized_tokens` on every write — but reads
+     * go through a plain `JWTSubAuthorizer` that resolves the raw `sub`,
+     * never a role name. Since a role name and a raw `sub` never coincide,
+     * an authenticated writer could never read their own record back via
+     * GraphQL, and any role-unmapped caller's writes got
+     * `authorized_tokens = []` (public) instead of scoped to themselves.
+     * Returning the raw identity here makes writes and reads agree on what
+     * "this caller" means, matching `JWTSubAuthorizer`'s behavior exactly.
+     * RBAC role resolution still happens, but only inside
+     * `authorizeAction`'s `enforce()` call, below — never here.
+     */
     async getAuthToken(context: any): Promise<any> {
-        const sub = await this.jwtAuth.getAuthToken(context);
-        if (sub.length === 0) {
-            return [];
-        }
-        return await this.enforcer.getRolesForUser(sub[0]);
+        return await this.jwtAuth.getAuthToken(context);
     }
 
     async isAuthorized(credentials: string[], data: Envelope): Promise<boolean> {
@@ -50,19 +63,34 @@ export class CasbinAuth implements Auth {
     }
 
     /**
-     * Verb-aware RBAC check: does any of `credentials` (subjects/roles, as
-     * returned by getAuthToken) have permission to perform `action` on this
-     * instance's `resource`? Backed by a real casbin enforcer.enforce()
-     * call, unlike isAuthorized's envelope-token ABAC. Credentials with no
-     * resolved role fall back to the literal "anonymous" subject, so
-     * policy.csv can grant/deny unauthenticated callers explicitly.
+     * Verb-aware RBAC check: does any of `credentials` (raw identities, as
+     * now returned by getAuthToken — see its doc comment) have permission
+     * to perform `action` on this instance's `resource`? Backed by a real
+     * casbin enforcer.enforce() call, unlike isAuthorized's envelope-token
+     * ABAC.
+     *
+     * Role resolution happens HERE, not in getAuthToken: this model's
+     * matcher is flat (`r.sub == p.sub`, no `g()` call inside the matcher
+     * itself — see examples/farm/config/casbin/model.conf), so `enforce()`
+     * only ever matches a policy row when `subject` IS already a role name.
+     * Each raw credential is resolved via `getRolesForUser` first; a
+     * credential with no resolved role is enforced under its own raw value
+     * instead (so a `policy.csv` row can still target a specific subject
+     * directly, not only roles), and credentials list is empty falls back
+     * to the literal "anonymous" subject, so policy.csv can grant/deny
+     * unauthenticated callers explicitly.
      */
     async authorizeAction(credentials: string[], action: Action): Promise<boolean> {
         const subjects = credentials.length > 0 ? credentials : ['anonymous'];
 
         for (const subject of subjects) {
-            if (await this.enforcer.enforce(subject, this.resource, action)) {
-                return true;
+            const roles = await this.enforcer.getRolesForUser(subject);
+            const subjectsToEnforce = roles.length > 0 ? roles : [subject];
+
+            for (const s of subjectsToEnforce) {
+                if (await this.enforcer.enforce(s, this.resource, action)) {
+                    return true;
+                }
             }
         }
 

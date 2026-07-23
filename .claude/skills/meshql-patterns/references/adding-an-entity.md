@@ -123,7 +123,7 @@ Notes:
 - Authorization filtering on every read, via the `Auth` passed through `init()`.
 - `X-Meshql-Created-At`/`X-Meshql-Deleted` response headers on REST `create`/`read`/`update` — the "honesty" as-of fields, automatic, no config needed.
 
-## 5. Validation — and the gap where Rust/Java have more
+## 5. Write-time extension hooks — and the gap where Rust/Java have more
 
 The only built-in write-time hook is JSON Schema validation (`JSONSchemaValidator`, AJV). There is **no** `defaults`-merge or `post_create` side-effect mechanism in `Crud` (`core/restlette/src/crud.ts`) today — unlike meshql-rs's `build_restlette_router_ext`. If a write needs business rules or a downstream effect:
 

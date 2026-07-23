@@ -76,9 +76,9 @@ export class CasbinAuth implements Auth {
      * Each raw credential is resolved via `getRolesForUser` first; a
      * credential with no resolved role is enforced under its own raw value
      * instead (so a `policy.csv` row can still target a specific subject
-     * directly, not only roles), and credentials list is empty falls back
-     * to the literal "anonymous" subject, so policy.csv can grant/deny
-     * unauthenticated callers explicitly.
+     * directly, not only roles), and when the credentials list is empty it
+     * falls back to the literal "anonymous" subject, so policy.csv can
+     * grant/deny unauthenticated callers explicitly.
      */
     async authorizeAction(credentials: string[], action: Action): Promise<boolean> {
         const subjects = credentials.length > 0 ? credentials : ['anonymous'];

@@ -16,18 +16,23 @@ Given('I have created the REST API clients', async function(this: FarmWorld) {
 });
 
 Given('I have populated the farm data', async function(this: FarmWorld) {
+    // Note: `.create(...)` is called through `as any` below because the OpenAPI operationId
+    // "create" collides with axios's own `AxiosInstance.create(config?)` factory method. Since
+    // OpenAPIClient = AxiosInstance & OperationMethods, TypeScript resolves `.create` to the
+    // explicitly-declared AxiosInstance member (0-1 args) instead of the OperationMethods index
+    // signature (parameters?, data?, config?) — a known typing quirk of openapi-client-axios.
     // Create farm
-    const farm = await this.farm_api!.create(undefined, { name: 'Emerdale' });
+    const farm = await (this.farm_api! as any).create(undefined, { name: 'Emerdale' });
     this.farm_id = (farm as any).request.path.slice(-36);
 
     // Create coops
-    const coop1 = await this.coop_api!.create(undefined, { name: 'red', farm_id: this.farm_id });
+    const coop1 = await (this.coop_api! as any).create(undefined, { name: 'red', farm_id: this.farm_id });
     this.coop1_id = (coop1 as any).request.path.slice(-36);
 
-    const coop2 = await this.coop_api!.create(undefined, { name: 'yellow', farm_id: this.farm_id });
+    const coop2 = await (this.coop_api! as any).create(undefined, { name: 'yellow', farm_id: this.farm_id });
     this.coop2_id = (coop2 as any).request.path.slice(-36);
 
-    await this.coop_api!.create(undefined, { name: 'pink', farm_id: this.farm_id });
+    await (this.coop_api! as any).create(undefined, { name: 'pink', farm_id: this.farm_id });
 
     // Update first coop
     await this.coop_api!.update({ id: this.coop1_id } as any, { name: 'purple', farm_id: this.farm_id });
@@ -40,7 +45,7 @@ Given('I have populated the farm data', async function(this: FarmWorld) {
         { name: 'fuck', eggs: 2, coop_id: this.coop2_id },
     ];
 
-    await Promise.all(hens.map((hen) => this.hen_api!.create(undefined, hen)));
+    await Promise.all(hens.map((hen) => (this.hen_api! as any).create(undefined, hen)));
 });
 
 When('I query the farm graph with:', async function(this: FarmWorld, docString: string) {

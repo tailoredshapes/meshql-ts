@@ -63,6 +63,8 @@ Why this and not an application-level publish after the write:
 
 Because Debezium's message is **double-encoded JSON** (the `after` field is a JSON string, not an object) and its shape differs slightly between API-created documents (`{_id, id, payload: {...}}`) and manually-inserted ones (`{_id, name, ...}`), a real worker has to parse defensively — see `examples/events/README.md`'s "Debezium Message Structure" section and the parsing code in `processor.ts` for the exact shape to expect. Don't assume a clean, single-encoded event object.
 
+**If an event meshlette's primary store is `merkql` (via the Rust connector+worker sidecar — see `merkql-architecture`), none of the above applies to that entity at all.** merkql is itself a log; a restlette write against it already is the log append, not something a Debezium-style bridge needs to derive afterward. The Debezium/Kafka pattern above is for entities whose primary store is a real database (Mongo, Postgres) that isn't itself a log. Don't assume merkql needs the same bridging machinery — check whether `meshql-merkql`'s direct `Repository`/`Searcher` is available in the Rust sidecar before concluding merkql can't be used for a given event entity.
+
 ## The worker
 
 A worker is an independent Node process — not part of the meshql server, started and scaled separately (`examples/events/src/index.ts` starts the meshql server and the processor together for the example, but in production they're typically separate deployments). Its loop:

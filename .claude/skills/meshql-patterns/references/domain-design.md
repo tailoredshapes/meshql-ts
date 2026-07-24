@@ -21,6 +21,24 @@ The key realization: **you keep both meshes, and a worker translates verbs into 
 4. **Create the noun/projection mesh.** Same wiring, but nothing writes it through the public API in the intended design — only a worker does, and only via its own `/api` restlette (see below; meshobj doesn't currently enforce this with network policy, so document and code-review it).
 5. **Build one worker per noun**, driven by CDC off the event mesh's store. It consumes the events it needs, transforms/folds them, and `POST`s the projection to its restlette.
 
+## Run an actual event storm — don't skip straight to code
+
+Steps 1–2 above are usually done badly when done silently in your head. **Event storming** (Alberto Brandolini's technique — sticky notes on a wall, or the written equivalent here) is a concrete process for doing them properly, and its categories map almost one-to-one onto meshql's own concepts. Produce this as a real, written artifact (a markdown doc is fine) *before* wiring anything — not a mental pass you skip straight through:
+
+| Event storm artifact | meshql concept |
+|---|---|
+| **Domain Events** (past tense: "Order Placed", "User Logged In") | Event-mesh entities — the verbs. Each becomes a create-only restlette. |
+| **Commands** (imperative: "Place Order", "Log In") | The REST payload shape of a `POST` to the corresponding event restlette. |
+| **Actors / Roles** (who issues a command — a customer, an editor, a system) | Casbin roles (`CasbinAuth.create(casbinParams, jwtSubAuthorizer)`, `core/casbin_auth`, see "Auth beyond the default" in `SKILL.md`'s decision guide) — who's authorized to write which event. Don't default to the open/no-auth path once you've named actors; wire the roles you just identified. |
+| **Policies** ("whenever X happens, then Y should happen") | **Workers.** A policy *is* a worker's fold-and-react loop — this is the most direct mapping in the table. A multi-step policy (event → triggers a new command → new event) is a worker that, after folding, also issues a follow-up write via REST. |
+| **Aggregates** (the consistency boundary around a command) | The event mesh's write-side boundary — what one event commits atomically, and what a restlette's validators should actually check. |
+| **Read Models / Views** (what someone needs to see) | Domain/projection meshes — the nouns from step 2 above, one worker each. |
+| **Hotspots** (open questions, conflicting opinions, "we're not sure yet") | Write them down explicitly in the design artifact and flag them for the human. Don't silently resolve a hotspot with a guess. |
+
+**Ground the storm in reality, not a blank page.** If an established product already exists in the same problem space, look at how it actually models the domain (its real entities, its real event/state lifecycle) before inventing your own from scratch — a green-field brainstorm reliably misses events and edge cases that someone else already discovered the hard way. Adapt the domain shape, not the code.
+
+Once the storm is done, steps 3–5 above are close to mechanical: Domain Events → event mesh, Read Models → noun/projection mesh, Policies → workers.
+
 ## The write-path rule (the crux)
 
 **Front ends write business events. They never write domain models.**

@@ -92,6 +92,16 @@ This is only sound as long as retention covers the replay window and nothing byp
 - **Per-entity meshes** (own storage, own HOCON block) = events and projections are independently deployable, swappable, and rebuildable.
 - **CQRS-by-convention** (REST writes / GraphQL reads) = the event-in / projection-out split is already the grain of the framework. `examples/farm-cqrs/` shows this taken further — a `read-service.conf` and `write-service.conf` splitting the same domain into two deployable services.
 
+## What "idempotent fold" actually guarantees
+
+**Be precise about what "idempotent" means here — the over-reading is dangerous.** A fold is idempotent over a *whole log*: replay the log from an empty projection twice and you get the same noun. That is NOT the same as idempotent *per event*, and most useful folds are not — an accumulator like `messageCount + 1` recomputes correctly from zero and inflates if handed the same event twice against state that already includes it.
+
+A worker that re-reads the log from the beginning every tick never exercises the distinction, because every tick resets and re-folds. **It becomes live the moment a worker consumes incrementally** (committed consumer offsets, a Kafka consumer group resuming where it left off), because at-least-once delivery then means a redelivered batch lands on state that may already include it.
+
+The fix is not to make every fold per-event idempotent — often impossible without storing seen-ids forever. It is to treat **the consumed offset and the fold state as one atomic artifact**: checkpoint them together, restore them together, and commit the offset *after* the projection write. A redelivered batch then lands on the state that predates it and recomputes rather than accumulates. A worker with nowhere durable to keep fold state must also keep no offset — committing a position for in-memory state means restarting at a non-zero offset with an empty projector, which silently produces a wrong noun instead of failing.
+
+Note the checkpoint is generally **not** derivable from the published projection: a projector usually holds state it deliberately never publishes (a pending-request set, an explicitly-granted role, a live-session set). Rehydrating from the projection alone loses exactly that.
+
 ## Anti-patterns specific to this pattern
 
 - A front end (or any code outside a worker) `POST`ing directly to a projection's restlette. If you're tempted to write a projection from a UI action, model the underlying business event instead and let the worker derive the projection.
@@ -101,3 +111,4 @@ This is only sound as long as retention covers the replay window and nothing byp
 - A projection with no worker keeping it in sync by hand.
 - Treating a projection as more authoritative than the event log — if they disagree, the log (and the CDC topic, within its retention window) wins and the projection gets rebuilt.
 - A worker fold that isn't idempotent (depends on wall-clock reads, randomness, or external state at fold time) — it breaks replay and makes Kafka's at-least-once delivery unsafe to rely on. (Note `buildProcessedEvent` in the example uses `Math.random()` for a fake `processing_time_ms` — fine for a demo metric, but don't let non-determinism leak into fields that affect projection identity or downstream logic.)
+- **A worker that commits a consumed offset without durably checkpointing its fold state alongside it.** The two are one decision (see above): committing the offset alone means a restart resumes at a position with an empty projector, silently producing a wrong noun rather than an obvious failure.

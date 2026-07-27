@@ -220,6 +220,44 @@ Focus reviews on:
 3. **Input validation** - Are GraphQL/REST inputs validated against schemas?
 4. **Null safety** - Are optional values safely handled (e.g., jwt.decode null check)?
 
+### The authorization certification
+
+`core/cert/features/e2e/authorization.feature` is the executable statement of
+the authorization contract, and every adapter runs it (`yarn cucumber-js -p e2e`).
+
+It exists because the farm certification cannot prove authorization works: it
+drives every request as a single caller, and against one caller a working
+authorization filter and an inert one are indistinguishable. The authz suite
+uses four callers with non-overlapping credentials (`alice`/`bob`/`root`/
+`nobody`, resolved from the JWT `sub` by the casbin policy in
+`core/cert/config/casbin`) and drives the real HTTP surfaces — writes through
+the restlette, reads through the graphlette. **Every defect it was written to
+catch lives in the wiring above the `Searcher`, so a `Repository`-level test
+structurally cannot see them.**
+
+Invariants it pins down:
+
+- **Tokens must survive the write path.** `Crud` resolves the caller's tokens
+  onto `Envelope.authorized_tokens`; the envelope is the source of truth and
+  the `tokens` parameter on `Repository.create` is only a fallback for direct
+  callers. A record stored with `[]` is public — so silently dropping the
+  tokens makes everything public.
+- **Vector/list queries must filter.** `Auth.isAuthorized` is async;
+  `Array.filter` over it tests a Promise and authorizes everything. Resolve the
+  decisions first, then filter.
+- **The request must reach the GraphQL context.** Resolvers pass the context to
+  `Auth.getAuthToken`, which reads the caller's headers. Cross-service resolvers
+  read the auth header off the context too, so credentials survive a hop.
+- **No credentials is permitted, and stays permitted.** An empty token list on a
+  record means public; an uncredentialed caller reaches exactly those records
+  and no more. There is no "skip the check when creds are empty" shortcut.
+- **`at:` rewinds data, not authorization.**
+
+If you add a storage backend, wire it into the suite the way
+`repos/*/test/e2e/support/hooks.ts` does: one `AuthzEnv` on its own
+table/collection and its own port (`port + 100` — the Fetch spec blocks a
+handful of ports, 4045 among them).
+
 ## Configuration System
 
 Uses HOCON format for configuration files. Key structure:

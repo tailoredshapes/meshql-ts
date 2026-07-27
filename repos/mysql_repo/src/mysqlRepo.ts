@@ -14,6 +14,12 @@ export interface EnvelopeRow extends RowDataPacket {
     authorized_tokens: string[];
 }
 
+/**
+ * MySQL returns the `authorized_tokens` JSON column already parsed, but a
+ * projection that never selected it comes back undefined. It must survive
+ * onto the Envelope: the Searcher hands the envelope straight to
+ * `Auth.isAuthorized`, and an envelope with no tokens reads as "public".
+ */
 export const rowToEnvelope = (row: EnvelopeRow): Envelope => {
     row.payload.id = row.id;
     return {
@@ -21,7 +27,20 @@ export const rowToEnvelope = (row: EnvelopeRow): Envelope => {
         payload: row.payload,
         created_at: new Date(Number(row.created_at)),
         deleted: row.deleted,
+        authorized_tokens: parseTokens(row.authorized_tokens),
     };
+};
+
+const parseTokens = (tokens: string[] | string | undefined | null): string[] => {
+    if (!tokens) return [];
+    if (typeof tokens === 'string') {
+        try {
+            return JSON.parse(tokens);
+        } catch {
+            return [];
+        }
+    }
+    return tokens;
 };
 
 export class MySQLRepository implements Repository {
@@ -69,14 +88,25 @@ export class MySQLRepository implements Repository {
         }
     }
 
+    /**
+     * The envelope is the source of truth for `authorized_tokens`: the
+     * restlette resolves the caller's tokens and puts them there. The
+     * `readers` parameter is the fallback for direct Repository callers that
+     * build a bare envelope.
+     */
+    private static tokensFor(doc: Envelope, readers: string[] = []): string[] {
+        return doc.authorized_tokens ?? readers ?? [];
+    }
+
     create = async (doc: Envelope, readers: string[] = []): Promise<Envelope> => {
         const logicalId = doc.id || uuid();
         const now = Date.now();
+        const authorizedTokens = MySQLRepository.tokensFor(doc, readers);
         const query = `
             INSERT INTO ${this.table} (id, payload, authorized_tokens, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?);
         `;
-        const values = [logicalId, JSON.stringify(doc.payload), JSON.stringify(readers), now, now];
+        const values = [logicalId, JSON.stringify(doc.payload), JSON.stringify(authorizedTokens), now, now];
 
         try {
             await this.pool.query<ResultSetHeader>(query, values);
@@ -85,6 +115,7 @@ export class MySQLRepository implements Repository {
                 payload: doc.payload,
                 created_at: new Date(now),
                 deleted: false,
+                authorized_tokens: authorizedTokens,
             };
         } catch (err) {
             logger.error(`Failed to create document: ${err}`);
@@ -131,10 +162,11 @@ export class MySQLRepository implements Repository {
 
         const placeholders = ids.map(() => '?').join(',');
         const query = `
-            SELECT DISTINCT id, 
+            SELECT DISTINCT id,
                    FIRST_VALUE(payload) OVER w AS payload,
                    FIRST_VALUE(created_at) OVER w AS created_at,
-                   FIRST_VALUE(deleted) OVER w AS deleted
+                   FIRST_VALUE(deleted) OVER w AS deleted,
+                   FIRST_VALUE(authorized_tokens) OVER w AS authorized_tokens
             FROM ${this.table}
             WHERE id IN (${placeholders})
               AND deleted = FALSE
@@ -203,7 +235,8 @@ export class MySQLRepository implements Repository {
             SELECT DISTINCT id,
                    FIRST_VALUE(payload) OVER w AS payload,
                    FIRST_VALUE(created_at) OVER w AS created_at,
-                   FIRST_VALUE(deleted) OVER w AS deleted
+                   FIRST_VALUE(deleted) OVER w AS deleted,
+                   FIRST_VALUE(authorized_tokens) OVER w AS authorized_tokens
             FROM ${this.table}
             WHERE deleted = FALSE
             ${readers.length ? 'AND JSON_OVERLAPS(authorized_tokens, CAST(? AS JSON))' : ''}
@@ -219,6 +252,7 @@ export class MySQLRepository implements Repository {
                 payload: row.payload as Payload,
                 created_at: new Date(Number(row.created_at)),
                 deleted: !!row.deleted,
+                authorized_tokens: parseTokens(row.authorized_tokens),
             }));
         } catch (err) {
             logger.error(`Failed to list documents: ${err}`);

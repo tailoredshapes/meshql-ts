@@ -42,8 +42,27 @@ export class Crud {
         }
     };
 
+    /**
+     * The tokens a new version is written with: the restlette's static list
+     * when one is configured, otherwise whatever Auth resolved for this
+     * caller. An uncredentialed caller yields `[]`, which is the documented
+     * "public" marker -- that is deliberate, not an accident.
+     *
+     * These land on `Envelope.authorized_tokens`, which is what the
+     * Repository persists.
+     */
     private async calculateTokens(req: Request): Promise<string[]> {
         return this._tokens.length > 0 ? this._tokens : await this._authorizer.getAuthToken(req);
+    }
+
+    /**
+     * `Auth.isAuthorized` is async, so `Array.prototype.filter` over it tests a
+     * Promise -- which is always truthy, and silently authorizes everything.
+     * Resolve every decision first, then filter on the resolved booleans.
+     */
+    private async filterAuthorized(credentials: string[], envelopes: Envelope[]): Promise<Envelope[]> {
+        const decisions = await Promise.all(envelopes.map((e) => this._authorizer.isAuthorized(credentials, e)));
+        return envelopes.filter((_, i) => decisions[i]);
     }
 
     /**
@@ -130,9 +149,11 @@ export class Crud {
         }
     };
 
-    list = async (_req: Request, res: Response) => {
+    list = async (req: Request, res: Response) => {
+        const authToken = await this._authorizer.getAuthToken(req);
         const results = await this._repo.list();
-        res.send(results.map((r) => `${this._context}/${r.id}`));
+        const authorized = await this.filterAuthorized(authToken, results);
+        res.send(authorized.map((r) => `${this._context}/${r.id}`));
     };
 
     bulk_create = async (req: Request, res: Response) => {
@@ -156,7 +177,7 @@ export class Crud {
         const authToken = await this._authorizer.getAuthToken(req);
 
         const found = await this._repo.readMany(ids);
-        const authorizedDocs = found.filter((r) => this._authorizer.isAuthorized(authToken, r));
+        const authorizedDocs = await this.filterAuthorized(authToken, found);
 
         res.send(authorizedDocs.map((r) => r.payload));
     };

@@ -103,14 +103,17 @@ export class MySQLSearcher implements Searcher {
         try {
             const [rows] = await this.pool.query<EnvelopeRow[]>(sql, [timestamp]);
 
-            const authorizedResults = await Promise.all(
-                rows.filter((row) => this.authorizer.isAuthorized(creds, rowToEnvelope(row))),
-            );
+            // `isAuthorized` is async: filtering on it directly tests a Promise,
+            // which is always truthy, so every row survives regardless of
+            // credentials. Resolve first, then filter on the resolved booleans.
+            const envelopes = rows.map(rowToEnvelope);
+            const decisions = await Promise.all(envelopes.map((e) => this.authorizer.isAuthorized(creds, e)));
+            const authorizedResults = envelopes.filter((_, i) => decisions[i]);
 
-            return authorizedResults.map((row) => {
-                const payload = row.payload;
-                payload.id = row.id;
-                payload.createdAt = new Date(Number(row.created_at)).toISOString();
+            return authorizedResults.map((envelope) => {
+                const payload = envelope.payload;
+                payload.id = envelope.id;
+                payload.createdAt = envelope.created_at?.toISOString();
                 return payload;
             });
         } catch (err) {

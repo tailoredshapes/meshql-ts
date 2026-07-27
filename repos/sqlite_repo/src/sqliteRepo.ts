@@ -35,6 +35,16 @@ export class SQLiteRepository implements Repository {
         };
     };
 
+    /**
+     * The envelope is the source of truth for `authorized_tokens`: the
+     * restlette resolves the caller's tokens and puts them there. The `tokens`
+     * parameter is the fallback for direct Repository callers that build a
+     * bare envelope.
+     */
+    private static tokensFor(doc: Envelope, tokens: string[] = []): string[] {
+        return doc.authorized_tokens ?? tokens ?? [];
+    }
+
     create = async (doc: Envelope, tokens: string[] = []): Promise<Envelope> => {
         const query = `
             INSERT INTO ${this.table} (id, payload, created_at, authorized_tokens)
@@ -42,7 +52,7 @@ export class SQLiteRepository implements Repository {
         `;
         const id = doc.id || uuid();
         const createdAt = Date.now();
-        const values = [id, JSON.stringify(doc.payload), createdAt, JSON.stringify(tokens || [])];
+        const values = [id, JSON.stringify(doc.payload), createdAt, JSON.stringify(SQLiteRepository.tokensFor(doc, tokens))];
 
         try {
             const { lastID } = await this.db.run(query, values);

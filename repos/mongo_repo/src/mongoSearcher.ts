@@ -76,8 +76,11 @@ export class MongoSearcher implements Searcher {
         if (doc.length > 0) {
             let result = doc[0];
 
-            // Skip authorization check if no credentials provided (matches SQL repos behavior)
-            if (creds.length === 0 || (await this.authorizer.isAuthorized(creds, result))) {
+            // No short-circuit on empty credentials: an uncredentialed caller
+            // is permitted, but only to the records whose own token list is
+            // empty. `isAuthorized` already encodes that rule, and the SQL
+            // adapters go through it unconditionally.
+            if (await this.authorizer.isAuthorized(creds, result)) {
                 result.payload.id = result.id;
                 result.payload.createdAt = result.created_at?.toISOString();
                 return this.dtoFactory.fillOne(result.payload, timestamp);
@@ -123,10 +126,15 @@ export class MongoSearcher implements Searcher {
             ])
             .toArray();
 
-        // Only apply authorization filtering if credentials are provided (matches SQL repos behavior)
-        if (args !== undefined && creds.length > 0) {
-            results = results.filter((r: Document) => this.authorizer.isAuthorized(creds, r as Envelope));
-        }
+        // `isAuthorized` is async: filtering on it directly tests a Promise,
+        // which is always truthy, so every document survives regardless of
+        // credentials. Resolve first, then filter on the resolved booleans.
+        // Applied unconditionally -- an uncredentialed caller still only
+        // reaches records whose own token list is empty.
+        const decisions = await Promise.all(
+            results.map((r: Document) => this.authorizer.isAuthorized(creds, r as Envelope)),
+        );
+        results = results.filter((_: Document, i: number) => decisions[i]);
 
         return results.map((d) => {
             let r = d as Schema;

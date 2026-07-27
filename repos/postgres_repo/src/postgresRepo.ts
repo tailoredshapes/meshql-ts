@@ -63,6 +63,16 @@ export class PostgresRepository implements Repository {
      * Create one record. If the UNIQUE (id, created_at) constraint
      * fails, wait 2ms and retry up to 5 times.
      */
+    /**
+     * The envelope is the source of truth for `authorized_tokens`: the
+     * restlette resolves the caller's tokens and puts them there. The
+     * `readers` parameter is the fallback for direct Repository callers that
+     * build a bare envelope.
+     */
+    private static tokensFor(doc: Envelope, readers: string[] = []): string[] {
+        return doc.authorized_tokens ?? readers ?? [];
+    }
+
     create = async (doc: Envelope, readers: string[] = [], retryCount = 0): Promise<Envelope> => {
         const maxRetries = 5;
         const query = `
@@ -71,7 +81,7 @@ export class PostgresRepository implements Repository {
             RETURNING *;
         `;
         const logicalId = doc.id || uuid();
-        const values = [logicalId, doc.payload, readers];
+        const values = [logicalId, doc.payload, PostgresRepository.tokensFor(doc, readers)];
 
         try {
             const result = await this.pool.query(query, values);
@@ -81,6 +91,7 @@ export class PostgresRepository implements Repository {
                 payload: row.payload,
                 created_at: row.created_at,
                 deleted: !!row.deleted,
+                authorized_tokens: row.authorized_tokens ?? [],
             };
         } catch (err: any) {
             // Postgres uses "23505" for unique violation
@@ -126,6 +137,7 @@ export class PostgresRepository implements Repository {
             payload: row.payload,
             created_at: row.created_at,
             deleted: !!row.deleted,
+            authorized_tokens: row.authorized_tokens ?? [],
         };
     };
 
@@ -149,6 +161,7 @@ export class PostgresRepository implements Repository {
             payload: row.payload,
             created_at: row.created_at,
             deleted: !!row.deleted,
+            authorized_tokens: row.authorized_tokens ?? [],
         }));
     };
 
@@ -191,7 +204,7 @@ export class PostgresRepository implements Repository {
             SELECT DISTINCT ON (id) *
             FROM ${this.table}
             WHERE deleted IS FALSE
-            ${readers.length > 0 ? 'AND readers && $1' : ''}
+            ${readers.length > 0 ? 'AND authorized_tokens && $1' : ''}
             ORDER BY id, created_at DESC;
         `;
         const values = readers.length > 0 ? [readers] : [];
@@ -202,6 +215,7 @@ export class PostgresRepository implements Repository {
             payload: row.payload,
             created_at: row.created_at,
             deleted: !!row.deleted,
+            authorized_tokens: row.authorized_tokens ?? [],
         }));
 
         logger.debug("List query results", { 

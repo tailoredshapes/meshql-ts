@@ -98,7 +98,13 @@ export class PostgresSearcher implements Searcher {
         try {
             const result = await this.pool.query(sql);
 
-            const authorizedResults = result.rows.filter((row) => this.authorizer.isAuthorized(creds, row));
+            // `isAuthorized` is async: filtering on it directly tests a Promise,
+            // which is always truthy, so every row survives regardless of
+            // credentials. Resolve first, then filter on the resolved booleans.
+            const decisions = await Promise.all(
+                result.rows.map((row) => this.authorizer.isAuthorized(creds, row)),
+            );
+            const authorizedResults = result.rows.filter((_, i) => decisions[i]);
 
             return authorizedResults.map((row) => {
                 row.payload.id = row.id;

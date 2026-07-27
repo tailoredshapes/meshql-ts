@@ -5,9 +5,12 @@ import { Envelope, Id, Repository } from '@tailoredshapes/meshql-common';
 
 const logger = Log4js.getLogger('meshql-ts/mongorepo');
 
+// The field on the stored envelope is `authorized_tokens`; filtering on
+// `authorized_readers` matched nothing, so every token-scoped read came back
+// empty instead of coming back scoped.
 function secureRead(tokens: string[], match: any): any {
     if (tokens.length > 0) {
-        match.authorized_readers = { $in: tokens };
+        match.authorized_tokens = { $in: tokens };
     }
     return match;
 }
@@ -19,8 +22,19 @@ export class MongoRepository implements Repository {
         this.db = db;
     }
 
-    create = async (doc: Envelope): Promise<Envelope> => {
+    /**
+     * The envelope is the source of truth for `authorized_tokens`: the
+     * restlette resolves the caller's tokens and puts them there. The `tokens`
+     * parameter is the fallback for direct Repository callers that build a
+     * bare envelope.
+     */
+    private static tokensFor(doc: Envelope, tokens: string[] = []): string[] {
+        return doc.authorized_tokens ?? tokens ?? [];
+    }
+
+    create = async (doc: Envelope, tokens: string[] = []): Promise<Envelope> => {
         doc.created_at = new Date();
+        doc.authorized_tokens = MongoRepository.tokensFor(doc, tokens);
 
         if (!Object.hasOwnProperty.call(doc, 'id')) {
             doc.id = uuid();
@@ -32,10 +46,11 @@ export class MongoRepository implements Repository {
         return doc;
     };
 
-    createMany = async (clean_docs: Envelope[]): Promise<Envelope[]> => {
+    createMany = async (clean_docs: Envelope[], tokens: string[] = []): Promise<Envelope[]> => {
         const created_at = new Date();
         const docs: Envelope[] = clean_docs.map((doc) => {
             doc.created_at = created_at;
+            doc.authorized_tokens = MongoRepository.tokensFor(doc, tokens);
             doc.id = uuid();
             return doc;
         });
@@ -58,9 +73,7 @@ export class MongoRepository implements Repository {
             deleted: { $exists: false },
         };
 
-        if (tokens.length > 0) {
-            filter.authorized_readers = { $in: tokens };
-        }
+        secureRead(tokens, filter);
         try {
             results = await this.db.find(filter).sort({ created_at: -1 }).toArray();
         } catch (err) {
@@ -103,7 +116,12 @@ export class MongoRepository implements Repository {
         }
 
         return results.map((d) => {
-            return { id: d.id, created_at: d.created_at, payload: d.payload };
+            return {
+                id: d.id,
+                created_at: d.created_at,
+                payload: d.payload,
+                authorized_tokens: d.authorized_tokens ?? [],
+            };
         });
     };
 
@@ -152,7 +170,12 @@ export class MongoRepository implements Repository {
         }
 
         return results.map((d) => {
-            return { id: d.id, created_at: d.created_at, payload: d.payload };
+            return {
+                id: d.id,
+                created_at: d.created_at,
+                payload: d.payload,
+                authorized_tokens: d.authorized_tokens ?? [],
+            };
         });
     };
 

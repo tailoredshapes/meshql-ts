@@ -94,7 +94,11 @@ export class SQLiteSearcher implements Searcher {
             return i;
         });
 
-        const authorizedResults = envelopes.filter((row) => this.authorizer.isAuthorized(creds, row));
+        // `isAuthorized` is async: filtering on it directly tests a Promise,
+        // which is always truthy, so every envelope survives regardless of
+        // credentials. Resolve first, then filter on the resolved booleans.
+        const decisions = await Promise.all(envelopes.map((row) => this.authorizer.isAuthorized(creds, row)));
+        const authorizedResults = envelopes.filter((_, i) => decisions[i]);
 
         return authorizedResults.map((row) => {
             const result = row as Envelope;

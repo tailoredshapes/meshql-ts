@@ -39,13 +39,23 @@ export function init(app: Application, schema: string, path: string, rootValue: 
 
     app.use(
         path,
-        graphqlHTTP(() => ({
+        graphqlHTTP((request) => ({
             schema: graphqlSchema,
             rootValue,
             graphiql: true,
-            // Create fresh DataLoader map for each request to prevent cache leaks
+            // The request has to reach the context: resolvers hand the context
+            // to `Auth.getAuthToken`, and every Auth implementation reads the
+            // caller's credentials off the request headers. Without it a
+            // caller who presents credentials arrives at the Searcher as
+            // anonymous, and per-record authorization can never engage.
+            //
+            // `headers` is lifted alongside the request so an Auth
+            // implementation can take either.
             context: {
+                // Fresh DataLoader map per request to prevent cache leaks
                 dataLoaders: new Map<string, DataLoader<string, Record<string, any>>>(),
+                request,
+                headers: request?.headers,
             },
             customFormatErrorFn: (error) => ({
                 message: error.message,

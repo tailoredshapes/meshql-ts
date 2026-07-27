@@ -64,8 +64,14 @@ const assignResolver = (id: string = 'id', queryName: string, url: URL): Record<
         let self = this as { [key: string]: any };
         let foreignKey: any = self[id];
 
-        // Try to extract auth header from request (args might be IncomingMessage in some cases)
-        let header = args && args.headers && args.headers.authorization ? args.headers.authorization : null;
+        // Forward the caller's credentials to the subgraph. The header lives on
+        // the context (which carries the request); the `args` lookup is a
+        // fallback for callers that pass an IncomingMessage in as args.
+        let header =
+            contextValue?.headers?.authorization ??
+            contextValue?.request?.headers?.authorization ??
+            args?.headers?.authorization ??
+            null;
 
         // Use DataLoader for batching if available in contextValue
         if (contextValue && contextValue.dataLoaders) {

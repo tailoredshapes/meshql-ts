@@ -1,12 +1,11 @@
 import { Before, AfterAll, BeforeAll } from '@cucumber/cucumber';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import Log4js from 'log4js';
-import { FarmTestWorld, DBFactories, FarmQueries, AuthzTestWorld} from '@tailoredshapes/meshql-cert';
+import { FarmTestWorld, DBFactories, FarmQueries, AuthzTestWorld, unverifiedToken } from '@tailoredshapes/meshql-cert';
 import { MongoConfig, MongoPlugin } from '../../../src';
 import { Plugin } from '@tailoredshapes/meshql-server';
 import { Server } from 'node:http';
 import { FarmEnv, AuthzEnv } from '@tailoredshapes/meshql-cert';
-import * as jwt from 'jsonwebtoken';
 
 Log4js.configure({
     appenders: { out: { type: 'stdout' } },
@@ -22,21 +21,21 @@ let farmEnv: FarmEnv;
 let authzEnv: AuthzEnv;
 let authzServer: Server;
 
-BeforeAll({ timeout: 120000 }, async function() {
+BeforeAll({ timeout: 120000 }, async function () {
     mongod = new MongoMemoryServer();
     await mongod.start();
 
-    const PREFIX = "cert";
-    const ENV = "mongo";
+    const PREFIX = 'cert';
+    const ENV = 'mongo';
 
     config = {
         type: ENV,
         uri: mongod.getUri(),
         db: `${PREFIX}_${ENV}`,
-        collection: "CHANGE ME",
+        collection: 'CHANGE ME',
         options: {
             directConnection: true,
-        }
+        },
     };
 
     dbFactories = {
@@ -51,8 +50,8 @@ BeforeAll({ timeout: 120000 }, async function() {
         farmDB: (): MongoConfig => {
             config.collection = `${PREFIX}-${ENV}-farm`;
             return config;
-        }
-    }
+        },
+    };
 
     let port = 3044;
 
@@ -69,11 +68,11 @@ BeforeAll({ timeout: 120000 }, async function() {
     };
 
     farmEnv = new FarmEnv(dbFactories, queries, platformUrl, port);
-    plugins = {"mongo": new MongoPlugin()}
+    plugins = { mongo: new MongoPlugin() };
     server = await farmEnv.buildService(plugins);
 
     // Initialize runtime properties in FarmEnv
-    farmEnv.token = jwt.sign({ sub: 'test-user' }, 'totallyASecret', { expiresIn: '1h' });
+    farmEnv.token = unverifiedToken('test-user');
     farmEnv.swaggerDocs = await farmEnv.getSwaggerDocs();
     farmEnv.apis = await farmEnv.buildApi(farmEnv.swaggerDocs, farmEnv.token);
 
@@ -90,17 +89,15 @@ BeforeAll({ timeout: 120000 }, async function() {
     authzServer = await authzEnv.buildService(plugins);
 });
 
-Before(async function(this: FarmTestWorld & AuthzTestWorld) {
+Before(async function (this: FarmTestWorld & AuthzTestWorld) {
     this.server = server;
     this.env = farmEnv;
     this.authz = authzEnv;
 });
 
-
-AfterAll(async function(){
-    await plugins["mongo"].cleanup();
+AfterAll(async function () {
+    await plugins['mongo'].cleanup();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await new Promise<void>((resolve) => authzServer.close(() => resolve()));
     await mongod.stop();
 });
-

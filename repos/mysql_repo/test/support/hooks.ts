@@ -11,7 +11,6 @@ import { NoOp } from '@tailoredshapes/meshql-auth';
 import { randomUUID } from 'crypto';
 import { init, Plugin, StorageConfig } from '@tailoredshapes/meshql-server';
 import { Auth } from '@tailoredshapes/meshql-auth';
-import * as jwt from 'jsonwebtoken';
 import { config as getFarmConfig } from '../config';
 import Log4js from 'log4js';
 import { MySQLConfig } from '../../src';
@@ -60,7 +59,7 @@ class MySQLPlugin implements Plugin {
     }
 
     async cleanup() {
-        await Promise.all(this.pools.map(pool => pool.end()));
+        await Promise.all(this.pools.map((pool) => pool.end()));
         this.pools = [];
     }
 }
@@ -72,7 +71,7 @@ let pools: Pool[] = [];
 let globalFarmServer: any = null;
 
 // Setup for farm tests
-BeforeAll(async function() {
+BeforeAll(async function () {
     // Start MySQL container for farm tests
     if (!container) {
         container = await new GenericContainer('mysql:8.0')
@@ -96,7 +95,7 @@ BeforeAll(async function() {
     config.graphlettes.forEach((g: any) => Object.assign(g.storage, mysqlSettings));
     config.restlettes.forEach((r: any) => Object.assign(r.storage, mysqlSettings));
 
-    const token = jwt.sign({ sub: 'test-user' }, 'totallyASecret', { expiresIn: '1h' });
+    const token = unverifiedToken('test-user');
     const plugin = new MySQLPlugin();
 
     try {
@@ -108,7 +107,7 @@ BeforeAll(async function() {
             server,
             config,
             token,
-            plugin
+            plugin,
         };
     } catch (e) {
         console.error('Failed to setup farm server:', e);
@@ -116,7 +115,7 @@ BeforeAll(async function() {
     }
 });
 
-Before(async function(this: TestWorld & FarmTestWorld) {
+Before(async function (this: TestWorld & FarmTestWorld) {
     if (!container) {
         container = await new GenericContainer('mysql:8.0')
             .withEnvironment({
@@ -178,7 +177,7 @@ Before(async function(this: TestWorld & FarmTestWorld) {
     };
 
     this.tearDown = async () => {
-        await Promise.all(pools.map(pool => pool.end()));
+        await Promise.all(pools.map((pool) => pool.end()));
         pools = [];
     };
 
@@ -187,7 +186,9 @@ Before(async function(this: TestWorld & FarmTestWorld) {
         findById: compile(`id = '{{id}}'`),
         findByName: compile(`JSON_EXTRACT(payload, '$.name') = '{{id}}'`),
         findAllByType: compile(`JSON_EXTRACT(payload, '$.type') = '{{id}}'`),
-        findByNameAndType: compile(`JSON_EXTRACT(payload, '$.type') = '{{type}}' AND JSON_EXTRACT(payload, '$.name') = '{{name}}'`),
+        findByNameAndType: compile(
+            `JSON_EXTRACT(payload, '$.type') = '{{type}}' AND JSON_EXTRACT(payload, '$.name') = '{{name}}'`,
+        ),
     };
 
     // For farm tests - share global server state
@@ -203,7 +204,7 @@ Before(async function(this: TestWorld & FarmTestWorld) {
     }
 });
 
-After(async function(this: TestWorld) {
+After(async function (this: TestWorld) {
     if (this.tearDown) {
         await this.tearDown();
     }

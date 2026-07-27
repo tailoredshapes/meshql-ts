@@ -138,9 +138,19 @@ External Client → API Gateway (Auth) → MeshQL Services (Authz) → Databases
 
 **Code Pattern:**
 ```typescript
-const dToken: { sub: string } = jwt.decode(token);
-return [dToken['sub']];
+const subject = subjectOf(authHeader.substring(7));   // core/jwt_auth/src/index.ts
+if (subject === undefined) return [];
+return [subject];
 ```
+
+There is deliberately **no JWT library in this file**. Verification is the only
+part of JWT handling that needs one, and meshql does not verify — so
+`subjectOf` base64url-decodes the payload segment and reads `sub`. Removing
+`jsonwebtoken` removes the unused verifier that every scanner and reviewer
+reported as a missing signature check; there is now nothing there to accuse.
+It also removed a live breakage: `jsonwebtoken` reaches
+`buffer-equal-constant-time`, which uses the removed `SlowBuffer` and throws on
+load, so this path was dead on any Node past 20.
 
 **This is CORRECT for the architecture:**
 - JWT signature validation happens at the API gateway (Istio, Kong, NGINX Ingress)
@@ -153,7 +163,19 @@ return [dToken['sub']];
 - Services focus on authorization, not authentication
 - Standard microservices pattern for zero-trust networks
 
-**Legitimate issue:** Missing null check on decode result (defensive programming, not security)
+**Legitimate issue (fixed):** the old code indexed the result of `jwt.decode()`,
+which is `null` for anything unparseable — so a malformed bearer token raised a
+TypeError out of an async handler and became a 500 where a 401 was meant.
+`subjectOf` is total: malformed input yields no credentials, and the caller then
+reaches public records only. Pinned by three cases in `core/jwt_auth/test`.
+
+**If verification is ever wanted** (no trusted gateway; tokens straight from
+clients) it belongs behind config as a sibling `verifiedSubjectOf(token, key)`.
+It would need `jose`, an algorithm **pinned in config** rather than read from
+the token's own `alg` header, `exp`/`aud`/`iss` checks — and it must refuse to
+start on an unreadable key rather than falling back to the unverified path.
+Silent fallback is how a deployment comes to believe it verifies when it does
+not.
 
 #### 2. Query Templates and "SQL Injection" (`*_repo` packages)
 

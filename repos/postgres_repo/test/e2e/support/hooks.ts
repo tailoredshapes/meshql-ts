@@ -1,11 +1,10 @@
 import { Before, AfterAll, BeforeAll } from '@cucumber/cucumber';
 import Log4js from 'log4js';
-import { FarmTestWorld, DBFactories, FarmQueries, AuthzTestWorld} from '@tailoredshapes/meshql-cert';
+import { FarmTestWorld, DBFactories, FarmQueries, AuthzTestWorld, unverifiedToken } from '@tailoredshapes/meshql-cert';
 import { PostgresConfig, PostgresPlugin } from '../../../src';
 import { Plugin } from '@tailoredshapes/meshql-server';
 import { Server } from 'node:http';
 import { FarmEnv, AuthzEnv } from '@tailoredshapes/meshql-cert';
-import * as jwt from 'jsonwebtoken';
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 
 Log4js.configure({
@@ -25,15 +24,15 @@ let user = `postgres`;
 let password = `password`;
 let database = `test`;
 
-BeforeAll({ timeout: 120000 }, async function() {
-    container = await new PostgreSqlContainer("postgres:17-alpine3.21")
+BeforeAll({ timeout: 120000 }, async function () {
+    container = await new PostgreSqlContainer('postgres:17-alpine3.21')
         .withUsername(user)
         .withPassword(password)
         .withDatabase(database)
         .start();
 
-    const PREFIX = "cert";
-    const ENV = "postgres";
+    const PREFIX = 'cert';
+    const ENV = 'postgres';
 
     config = {
         type: ENV,
@@ -53,8 +52,8 @@ BeforeAll({ timeout: 120000 }, async function() {
         },
         farmDB: (): PostgresConfig => {
             return { ...config, table: `${PREFIX}_${ENV}_farm` };
-        }
-    }
+        },
+    };
 
     let port = 4044;
 
@@ -71,11 +70,11 @@ BeforeAll({ timeout: 120000 }, async function() {
     };
 
     farmEnv = new FarmEnv(dbFactories, queries, platformUrl, port);
-    plugins = {"postgres": new PostgresPlugin()}
+    plugins = { postgres: new PostgresPlugin() };
     server = await farmEnv.buildService(plugins);
 
     // Initialize runtime properties in FarmEnv
-    farmEnv.token = jwt.sign({ sub: 'test-user' }, 'totallyASecret', { expiresIn: '1h' });
+    farmEnv.token = unverifiedToken('test-user');
     farmEnv.swaggerDocs = await farmEnv.getSwaggerDocs();
     farmEnv.apis = await farmEnv.buildApi(farmEnv.swaggerDocs, farmEnv.token);
 
@@ -92,17 +91,15 @@ BeforeAll({ timeout: 120000 }, async function() {
     authzServer = await authzEnv.buildService(plugins);
 });
 
-Before(async function(this: FarmTestWorld & AuthzTestWorld) {
+Before(async function (this: FarmTestWorld & AuthzTestWorld) {
     this.server = server;
     this.env = farmEnv;
     this.authz = authzEnv;
 });
 
-
-AfterAll(async function(){
-    await plugins["postgres"].cleanup();
+AfterAll(async function () {
+    await plugins['postgres'].cleanup();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await new Promise<void>((resolve) => authzServer.close(() => resolve()));
     await container!.stop();
 });
-

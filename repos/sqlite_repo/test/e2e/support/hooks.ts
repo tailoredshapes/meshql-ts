@@ -1,11 +1,10 @@
 import { Before, AfterAll, BeforeAll } from '@cucumber/cucumber';
 import Log4js from 'log4js';
-import { FarmTestWorld, DBFactories, FarmQueries, AuthzTestWorld} from '@tailoredshapes/meshql-cert';
+import { FarmTestWorld, DBFactories, FarmQueries, AuthzTestWorld, unverifiedToken } from '@tailoredshapes/meshql-cert';
 import { SQLConfig, SQLitePlugin } from '../../../src';
 import { Plugin } from '@tailoredshapes/meshql-server';
 import { Server } from 'node:http';
 import { FarmEnv, AuthzEnv } from '@tailoredshapes/meshql-cert';
-import * as jwt from 'jsonwebtoken';
 import fs from 'fs';
 
 Log4js.configure({
@@ -21,11 +20,11 @@ let farmEnv: FarmEnv;
 let authzEnv: AuthzEnv;
 let authzServer: Server;
 
-BeforeAll({ timeout: 120000 }, async function() {
-    const PREFIX = "cert";
-    const ENV = "sqlite";
+BeforeAll({ timeout: 120000 }, async function () {
+    const PREFIX = 'cert';
+    const ENV = 'sqlite';
 
-    const dbPath = "/tmp/test_sqlite_e2e.db";
+    const dbPath = '/tmp/test_sqlite_e2e.db';
 
     // Clean up the database file from previous runs
     if (fs.existsSync(dbPath)) {
@@ -35,7 +34,7 @@ BeforeAll({ timeout: 120000 }, async function() {
     config = {
         type: ENV,
         uri: dbPath,
-        collection: "CHANGE ME",
+        collection: 'CHANGE ME',
     };
 
     dbFactories = {
@@ -47,8 +46,8 @@ BeforeAll({ timeout: 120000 }, async function() {
         },
         farmDB: (): SQLConfig => {
             return { ...config, collection: `${PREFIX}_${ENV}_farm` };
-        }
-    }
+        },
+    };
 
     let port = 5044;
 
@@ -65,11 +64,11 @@ BeforeAll({ timeout: 120000 }, async function() {
     };
 
     farmEnv = new FarmEnv(dbFactories, queries, platformUrl, port);
-    plugins = {"sqlite": new SQLitePlugin()}
+    plugins = { sqlite: new SQLitePlugin() };
     server = await farmEnv.buildService(plugins);
 
     // Initialize runtime properties in FarmEnv
-    farmEnv.token = jwt.sign({ sub: 'test-user' }, 'totallyASecret', { expiresIn: '1h' });
+    farmEnv.token = unverifiedToken('test-user');
     farmEnv.swaggerDocs = await farmEnv.getSwaggerDocs();
     farmEnv.apis = await farmEnv.buildApi(farmEnv.swaggerDocs, farmEnv.token);
 
@@ -86,16 +85,14 @@ BeforeAll({ timeout: 120000 }, async function() {
     authzServer = await authzEnv.buildService(plugins);
 });
 
-Before(async function(this: FarmTestWorld & AuthzTestWorld) {
+Before(async function (this: FarmTestWorld & AuthzTestWorld) {
     this.server = server;
     this.env = farmEnv;
     this.authz = authzEnv;
 });
 
-
-AfterAll(async function(){
-    await plugins["sqlite"].cleanup();
+AfterAll(async function () {
+    await plugins['sqlite'].cleanup();
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await new Promise<void>((resolve) => authzServer.close(() => resolve()));
 });
-

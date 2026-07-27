@@ -11,3 +11,4 @@ export {
     AuthzCaller,
     AuthzCreated,
 } from './support/worlds';
+export { unverifiedToken } from './support/tokens';

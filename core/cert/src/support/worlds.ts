@@ -7,6 +7,7 @@ import { Document, OpenAPIClient, OpenAPIClientAxios } from 'openapi-client-axio
 import { Config } from 'log4js';
 import fs from 'fs';
 import path from 'path';
+import { unverifiedToken } from './tokens';
 
 export type SearcherTestTemplates = {
     findById: TemplateDelegate<{ id: string }>;
@@ -81,7 +82,7 @@ export class FarmEnv {
     }
 
     async getSwaggerDocs(): Promise<Document[]> {
-         return await Promise.all(
+        return await Promise.all(
             this.conf.restlettes.map(async (restlette: any) => {
                 const url = `http://localhost:${this.conf.port}${restlette.path}/api-docs/swagger.json`;
                 const response = await fetch(url);
@@ -107,15 +108,15 @@ export class FarmEnv {
             }),
         );
 
-        const repos: Record<string, any> = {}
+        const repos: Record<string, any> = {};
         for (const api of apis) {
             const firstPath = Object.keys(api.paths)[0];
             if (firstPath.includes('hen')) {
-                repos["hen"] = api;
+                repos['hen'] = api;
             } else if (firstPath.includes('coop')) {
-                repos["coop"] = api;
+                repos['coop'] = api;
             } else if (firstPath.includes('farm')) {
-                repos["farm"] = api;
+                repos['farm'] = api;
             }
         }
         return repos;
@@ -418,9 +419,7 @@ export class AuthzEnv {
         if (caller === 'anonymous') return undefined;
         const sub = AuthzEnv.subjects[caller];
         if (!sub) throw new Error(`Unknown caller "${caller}"`);
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const jwt = require('jsonwebtoken');
-        return jwt.sign({ sub }, 'totallyASecret', { expiresIn: '1h' });
+        return unverifiedToken(sub);
     }
 
     private headers(caller: AuthzCaller): Record<string, string> {

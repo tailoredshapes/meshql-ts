@@ -58,12 +58,60 @@ Workers consume events from a Kafka topic. Getting events *onto* that topic is t
 Why this and not an application-level publish after the write:
 
 - **No dual write.** A "write the DB, then publish the event" hook is two writes with no shared transaction. Crash in between and the row exists but the event never fired — the log is now a lie, and every projection built from it is silently wrong. CDC derives the event *from the committed write*, so the event cannot be lost relative to the data.
-- **Correct order and time.** Events carry the store's commit order and timestamp, so replay and temporal reads reflect what actually happened, not application wall-clock during a request.
+- **Correct order and time.** Debezium appends committed writes in commit order, carrying the store's timestamp, so replay and temporal reads reflect what actually happened rather than application wall-clock during a request. Note what the bridge's job *is*: appending. The authority on order is the Kafka topic itself — see "The queue is the ordering authority" below — so nothing here needs to sort, buffer, or reconcile before publishing.
 - **Minimal processor code.** `examples/events/src/processor.ts` is the whole worker — subscribe, parse the Debezium envelope, transform, `POST`. Kafka/Debezium do ordering, persistence, backpressure, consumer-group management, and at-least-once delivery; the worker's only job is the fold plus the write.
 
 Because Debezium's message is **double-encoded JSON** (the `after` field is a JSON string, not an object) and its shape differs slightly between API-created documents (`{_id, id, payload: {...}}`) and manually-inserted ones (`{_id, name, ...}`), a real worker has to parse defensively — see `examples/events/README.md`'s "Debezium Message Structure" section and the parsing code in `processor.ts` for the exact shape to expect. Don't assume a clean, single-encoded event object.
 
 **If an event meshlette's primary store is `merkql` (via the Rust connector+worker sidecar — see `merkql-architecture`), none of the above applies to that entity at all.** merkql is itself a log; a restlette write against it already is the log append, not something a Debezium-style bridge needs to derive afterward. The Debezium/Kafka pattern above is for entities whose primary store is a real database (Mongo, Postgres) that isn't itself a log. Don't assume merkql needs the same bridging machinery — check whether `meshql-merkql`'s direct `Repository`/`Searcher` is available in the Rust sidecar before concluding merkql can't be used for a given event entity.
+
+## The queue is the ordering authority
+
+**Ordering is provided implicitly. You do not have to build it.** Events arrive at N event meshlettes; the Kafka topics provide the ultimate ordering; workers receive those events in a defined order and are presented with a predictable domain. **Nothing needs to arrive pre-sorted — the append to the topic is what defines the order.** (This is the same point the "Minimal processor code" bullet above makes in passing — Kafka does ordering — stated as the guarantee it is.)
+
+This is the single most reliably reinvented part of the platform. Do not build machinery to reconstruct a total order before publishing. Two separate builds recently did exactly that:
+
+- one derived a cursor from a storage engine's physical row id (`_id INTEGER PRIMARY KEY`) and pinned itself to SQLite to get it — see `references/storage-adapters.md`, "Don't reach underneath the abstraction";
+- the other funnelled every entity through a **single-partition** topic sorted by `(created_at, table, _id)`, with a parking buffer to hold events that arrived out of that order.
+
+Both solved a problem Kafka had already solved, and each paid for it: the first with engine portability, the second with throughput plus a buffer that is now a piece of stateful infrastructure someone has to reason about on restart.
+
+If you find yourself writing a comparator, a re-sequencer, or a hold-back buffer on the produce side, stop: the correct amount of ordering code above the queue is none.
+
+## Ordering versus throughput versus durability is queue configuration — and it belongs to the domain
+
+meshql deliberately does not choose between them for you. It **cannot**: it does not know what matters about your domain, and there is no defensible default.
+
+- **If causal order matters**, configure the queue for it. **Partitioning by aggregate id** — a KafkaJS message `key` of the aggregate's id rather than leaving it null and round-robining — keeps causally-related events (a note and the likes on it; an asset and its lifecycle transitions) in one partition, and therefore ordered, without serialising the whole deployment through a single partition. That is usually the right answer, and it is a configuration decision, not a component you write.
+- **If throughput or durability matter more**, configure for those instead — more partitions, different `acks`/replication factor, different retention — and accept the weaker cross-aggregate ordering that comes with it.
+
+Whatever you choose, **write down in the architecture document what you prioritised and what you gave up.** It is a domain decision, so it belongs where the domain is described — next to the event storm artifact — not implied by a partition count in a `docker-compose.yml` or `debezium/application.properties` that nobody reads as a design statement. A reader six months later must be able to tell the difference between "we chose per-aggregate order over throughput" and "nobody thought about it." Retention deserves the same treatment here specifically, because — as the replay section below notes — a meshobj deployment's replay window is bounded by Kafka retention, not by an unbounded local log.
+
+## A refused command is a domain object, not an error response
+
+Events are events. If a user tries to put an aggregate into an illegal state, **then that is what they did**, and it is recorded in that event meshlette forever. You do not get to un-happen it, and a check that refuses the write at the door throws away the fact that someone tried.
+
+It is the **worker's** responsibility to find those state errors and respond accordingly — by emitting a **rejection** into its own projection. A rejection carries:
+
+- a link to the aggregate it concerns,
+- the source event id, the actor, and the timestamp,
+- what was attempted, and why the domain refused it.
+
+Because it is an ordinary projection entity — its own mesh, its own restlette the worker `POST`s to, its own graphlette — it is queryable by clients through the ordinary read path, so a UI can show *"your assignment was refused because the asset is disposed"* instead of leaving the user with a write that appeared to succeed. Think of it as a sophisticated, client-accessible dead-letter queue rather than a `console.warn`.
+
+It recurses cleanly: triaging a rejection is itself an event (`*_acknowledged`) folded into the same projection, so the queue gets worked without anything being mutated in place. **Correction is a new event, all the way down.**
+
+### The consequence for admission checks
+
+A gate in front of the event restlettes — AJV validation, auth middleware — refuses only what is refusable **without domain state**:
+
+- **authorization** — may this caller write this kind of event at all (`CasbinAuth`, `authorized_tokens`);
+- **schema validity** — does the payload match the entity's JSON Schema (`core/restlette/src/validation.ts`);
+- **create-only** — an event mesh takes `POST` and nothing else.
+
+Anything that needs the aggregate's *current state* — is this asset already disposed, is this account closed, does this holder still exist — is the **worker's** job, and it produces a rejection object, not a 4xx. AJV sees only the payload against a static schema; if you find yourself wanting to query a graphlette from inside a validation hook or an Express middleware in front of a restlette, you have found the boundary.
+
+Note that `teamchat` (a sibling product on the Rust port) currently does stateful checks at admission: its `write_gate` reads channel affiliation and returns 403. That is a defensible choice for chat, where immediate feedback while someone is typing matters more than it does in an asset register, and where a refusal has little downstream meaning worth querying later. But it is a **deliberate divergence** from the pattern above, and it should be named as one in that product's architecture document rather than copied into the next build because it was the shape that happened to be lying around.
 
 ## The worker
 
@@ -112,3 +160,6 @@ Note the checkpoint is generally **not** derivable from the published projection
 - Treating a projection as more authoritative than the event log — if they disagree, the log (and the CDC topic, within its retention window) wins and the projection gets rebuilt.
 - A worker fold that isn't idempotent (depends on wall-clock reads, randomness, or external state at fold time) — it breaks replay and makes Kafka's at-least-once delivery unsafe to rely on. (Note `buildProcessedEvent` in the example uses `Math.random()` for a fake `processing_time_ms` — fine for a demo metric, but don't let non-determinism leak into fields that affect projection identity or downstream logic.)
 - **A worker that commits a consumed offset without durably checkpointing its fold state alongside it.** The two are one decision (see above): committing the offset alone means a restart resumes at a position with an empty projector, silently producing a wrong noun rather than an obvious failure.
+- **Machinery to reconstruct a total order before publishing** — a re-sequencer, a parking/hold-back buffer, a single-partition funnel, a physical-row-id cursor. The topic append defines the order; this is code written against a problem that was already solved.
+- **A partition/retention/`acks` choice made silently.** Ordering vs throughput vs durability is a domain decision — record in the architecture document what you prioritised and what you gave up.
+- **A stateful domain check performed at admission and reported as a 4xx**, discarding the fact that the user tried. Admission refuses only what's refusable without domain state; everything else is a rejection object in a projection, queryable by the client.

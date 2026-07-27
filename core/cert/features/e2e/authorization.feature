@@ -45,6 +45,17 @@ Feature: Authorization Certification
     When "bob" queries the graph by id for "public-bird"
     Then the singleton result should be the hen "public-bird"
 
+  # The edge does authentication; the framework does authorization. A caller
+  # presenting no credentials is deliberately permitted -- but only as far as
+  # the records that are themselves public.
+  Scenario: An uncredentialed caller reaches public records and nothing else
+    Given "nobody" has created a hen named "open-bird"
+    And "alice" has created a hen named "closed-bird"
+    When "anonymous" queries the graph by id for "open-bird"
+    Then the singleton result should be the hen "open-bird"
+    When "anonymous" queries the graph by id for "closed-bird"
+    Then the singleton result should be empty
+
   Scenario: A caller holding every token still sees everything
     When "root" queries the graph by name "flock-bird"
     Then the vector result should contain exactly 2 hens

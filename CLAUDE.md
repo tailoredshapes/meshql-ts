@@ -155,7 +155,7 @@ load, so this path was dead on any Node past 20.
 **This is CORRECT for the architecture:**
 - JWT signature validation happens at the API gateway (Istio, Kong, NGINX Ingress)
 - MeshQL services receive pre-validated tokens
-- `jwt.decode()` extracts claims without re-verifying (performance optimization)
+- `subjectOf()` extracts the claim without re-verifying (one verification, at the gateway)
 - JWT signing secrets remain at the gateway only (security best practice)
 
 **Why this is not a vulnerability:**

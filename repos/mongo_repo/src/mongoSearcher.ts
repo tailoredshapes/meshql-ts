@@ -59,7 +59,9 @@ export class MongoSearcher implements Searcher {
         let query = this.processQueryTemplate(args, queryTemplate);
 
         query.created_at = {
-            $lt: new Date(timestamp),
+            // `<=`, matching the SQL adapters: a record created in the same
+            // millisecond as the query timestamp is visible, not invisible.
+            $lte: new Date(timestamp),
         };
 
         let doc = await this.db
@@ -99,7 +101,9 @@ export class MongoSearcher implements Searcher {
         timestamp: number = Date.now(),
     ): Promise<Record<string, any>[]> {
         let time_filter = {
-            $lt: new Date(timestamp),
+            // `<=`, matching the SQL adapters: a record created in the same
+            // millisecond as the query timestamp is visible, not invisible.
+            $lte: new Date(timestamp),
         };
 
         let query = this.processQueryTemplate(args, queryTemplate);

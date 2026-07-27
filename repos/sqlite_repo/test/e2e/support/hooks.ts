@@ -79,7 +79,9 @@ BeforeAll({ timeout: 120000 }, async function() {
     authzEnv = new AuthzEnv(
         authzStorage,
         { byId: queries.henById, byName: queries.henByName },
-        port + 1,
+        // +100, not +1: the Fetch spec blocks a handful of ports (4045 among
+        // them) and `fetch` refuses them outright.
+        port + 100,
     );
     authzServer = await authzEnv.buildService(plugins);
 });

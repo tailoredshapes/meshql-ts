@@ -1,10 +1,10 @@
 import { Before, AfterAll, BeforeAll } from '@cucumber/cucumber';
 import Log4js from 'log4js';
-import { FarmTestWorld, DBFactories, FarmQueries } from '@tailoredshapes/meshql-cert';
+import { FarmTestWorld, DBFactories, FarmQueries, AuthzTestWorld } from '@tailoredshapes/meshql-cert';
 import { MySQLConfig, MySQLPlugin } from '../../../src';
 import { Plugin } from '@tailoredshapes/meshql-server';
 import { Server } from 'node:http';
-import { FarmEnv } from '@tailoredshapes/meshql-cert';
+import { FarmEnv, AuthzEnv } from '@tailoredshapes/meshql-cert';
 import * as jwt from 'jsonwebtoken';
 import { MySqlContainer, StartedMySqlContainer } from '@testcontainers/mysql';
 
@@ -19,6 +19,8 @@ let config: MySQLConfig;
 let plugins: Record<string, Plugin>;
 let server: Server;
 let farmEnv: FarmEnv;
+let authzEnv: AuthzEnv;
+let authzServer: Server;
 
 BeforeAll({ timeout: 120000 }, async function() {
     container = await new MySqlContainer().start();
@@ -70,17 +72,31 @@ BeforeAll({ timeout: 120000 }, async function() {
     farmEnv.token = jwt.sign({ sub: 'test-user' }, 'totallyASecret', { expiresIn: '1h' });
     farmEnv.swaggerDocs = await farmEnv.getSwaggerDocs();
     farmEnv.apis = await farmEnv.buildApi(farmEnv.swaggerDocs, farmEnv.token);
+
+    // Authorization certification: its own service, its own table, so the
+    // farm scenarios and the authz scenarios can't contaminate each other.
+    const authzStorage: MySQLConfig = { ...config, table: `${PREFIX}_${ENV}_authz` };
+    authzEnv = new AuthzEnv(
+        authzStorage,
+        { byId: queries.henById, byName: queries.henByName },
+        // +100, not +1: the Fetch spec blocks a handful of ports (4045 among
+        // them) and `fetch` refuses them outright.
+        port + 100,
+    );
+    authzServer = await authzEnv.buildService(plugins);
 });
 
-Before(async function(this: FarmTestWorld) {
+Before(async function(this: FarmTestWorld & AuthzTestWorld) {
     this.server = server;
     this.env = farmEnv;
+    this.authz = authzEnv;
 });
 
 
 AfterAll(async function(){
     await plugins["mysql"].cleanup();
     await new Promise<void>((resolve) => server.close(() => resolve()));
+    await new Promise<void>((resolve) => authzServer.close(() => resolve()));
     await container.stop();
 });
 

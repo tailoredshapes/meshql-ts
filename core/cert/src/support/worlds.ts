@@ -390,7 +390,13 @@ export class AuthzEnv {
     async buildService(plugins: Record<string, Plugin>): Promise<Server> {
         this.plugins = plugins;
         const app = await init(this.conf, plugins);
-        return app.listen(this.port);
+        // Resolve only once the socket is actually accepting, so a bind
+        // failure surfaces here instead of as an opaque "fetch failed".
+        return await new Promise<Server>((resolve, reject) => {
+            const server = app.listen(this.port);
+            server.once('listening', () => resolve(server));
+            server.once('error', reject);
+        });
     }
 
     /**

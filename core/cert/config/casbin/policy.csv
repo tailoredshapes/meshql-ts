@@ -1,0 +1,7 @@
+p, tenant_a, hen, read
+p, tenant_b, hen, read
+
+g, alice, tenant_a
+g, bob, tenant_b
+g, root, tenant_a
+g, root, tenant_b

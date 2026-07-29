@@ -107,7 +107,28 @@ await app.listen(config.port);
 
 `init()` (`core/server/src/server.ts`) walks `config.graphlettes` and `config.restlettes`, looks up each entry's `storage.type` in the `plugins` map passed in, and builds the graphlette/restlette routes on a returned Express `Application`. **Composition happens by which `Plugin`s you pass into `init()`** (the `{ mongo: new MongoPlugin() }` map), not by which crates you `import`/`Cargo.toml`-depend-on — closer to registering drivers than to Rust's crate-level composition. Because `init()` returns a plain `Application`, the caller can still mount extra routes on it before calling `.listen()` (`examples/farm/index.ts` does this to add `/manifest`) — that's the escape hatch for anything the HOCON shape doesn't cover.
 
-Query templates are **Handlebars producing a JSON query**: `{"payload.farm_id": "{{id}}"}` for Mongo (`repos/mongo_repo`), a SQL fragment for SQL adapters. Top-level payload paths are adapter-specific (Mongo prefixes with `payload.`; SQL adapters typically don't); the special key `id` always addresses the Envelope id.
+### Query templates: the shape is per-adapter, and getting it wrong fails silently
+
+A query template is a Handlebars template **written in the query language of the store behind that searcher** — not a portable JSON dialect. Mongo takes a JSON filter document; the three SQL adapters take a **SQL `WHERE` fragment**, spliced into the searcher's outer template at `{{{filters}}}` (`repos/postgres_repo/src/postgresSearcher.ts:17-29`, `repos/mysql_repo/src/mysqlSearcher.ts:17-39`).
+
+The rule to remember:
+
+> **A payload field is never addressed by its bare name. The Envelope's `id` is top-level everywhere.**
+
+| Adapter | Payload field `name` | Envelope `id` |
+|---|---|---|
+| `mongo_repo` | `{"payload.name": "{{id}}"}` | `{"id": "{{id}}"}` |
+| `postgres_repo` | `payload->>'name' = '{{id}}'` | `id = '{{id}}'` |
+| `mysql_repo` | `JSON_UNQUOTE(JSON_EXTRACT(payload, '$.name')) = '{{id}}'` | `id = '{{id}}'` |
+| `sqlite_repo` | `json_extract(payload, '$.name') = '{{id}}'` | `id = '{{id}}'` |
+
+Note what the SQL rows actually say: it is **not** that SQL adapters "don't need the prefix" — it is that *you write the JSON extraction yourself*, in that dialect's syntax. A bare `name = '{{id}}'` against any of them is a reference to a **column that does not exist**, since the envelope table's columns are `pk`, `id`, `payload`, `created_at`, `updated_at`, `deleted`, `authorized_tokens` — every domain field lives *inside* the `payload` JSONB (`repos/postgres_repo/src/postgresRepo.ts:28-36`).
+
+**Every one of these failure modes is quiet.** On Mongo, an unprefixed key addresses a top-level document field that isn't there, so the query matches nothing and **returns an empty list with no error**. On the SQL adapters you get a database error at query time rather than an empty list — noisier, but only if that path is ever exercised.
+
+**A by-id test passes either way**, because `id` is top-level and correct in both the right and the wrong version of a template. So: **always test a vector/list query against data you actually wrote.** A suite that only exercises `getById` will go green over a completely broken set of templates.
+
+**Keep range questions out of templates.** meshobj's SQL adapters *can* express ranges and `OR`, but the sibling ports' event-log adapters (Rust `meshql-merkql`, Java `merksql`/`memory`) are **exact-equality-and-AND only — no ranges, no `OR`, no `ORDER BY`**. Materialising a **bucket field** at fold time — `close_period`, `occurred_on`, `size_band` — and querying it by equality is therefore the portable intersection across every adapter in the family. Treat that as good practice, not a workaround: a projection leaning on Postgres range predicates silently pins itself to Postgres and breaks invariant 5's swap-and-replay property.
 
 ## Deployment model: Lerna/Yarn monorepo + Plugin composition
 
@@ -132,6 +153,8 @@ Query templates are **Handlebars producing a JSON query**: `{"payload.farm_id": 
 - A GraphQL query without `at: Float` — breaks temporal uniformity.
 - Hard deletes, in-place updates, or reads that don't filter `deleted`.
 - A Searcher or Repository query path that skips `authorized_tokens` filtering — and specifically, filtering on any field name other than `authorized_tokens` (see the `mongo_repo`/`authorized_readers` gotcha under invariant 4).
+- **A query template written for the wrong adapter** — a Mongo-shaped JSON filter handed to a SQL adapter, or a bare `{"farm_id": "{{id}}"}` against Mongo. The Mongo case fails silently with an empty result set, and a `getById` test still passes. Test a vector query against written data.
+- **A range or `OR` baked into a projection's query templates.** meshobj's SQL adapters allow it, but the family's event-log adapters don't; materialise a bucket field at fold time so the projection stays portable.
 - Business/aggregation logic inside a `repos/*_repo` package — it belongs in restlette-adjacent code (extra Express routes/middleware on the app `init()` returns) or in a projection entity built by a worker.
 - Cross-entity joins implemented in a restlette — that's what graphlette resolvers are for.
 - A new `Plugin` merged without passing the `core/cert` certification suite.

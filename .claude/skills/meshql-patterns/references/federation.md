@@ -16,7 +16,7 @@ vectors = [
 ```
 
 - `singletons` vs `vectors` controls whether the GraphQL field returns an object or a list — it must match the schema's return type (`Coop` vs `[Coop]`).
-- Top-level template keys address **payload fields** for Mongo (`repos/mongo_repo`) as `"payload.<field>"`; the special key `id` always addresses the Envelope id. SQL adapters use SQL fragments instead of JSON — check the adapter you're targeting.
+- The special key `id` addresses the Envelope id on every adapter. **Payload fields are addressed differently per adapter and are not portable**: `"payload.<field>"` in Mongo's JSON filter document, and an explicit JSON extraction inside a SQL `WHERE` fragment elsewhere — `payload->>'<field>'` (postgres), `JSON_UNQUOTE(JSON_EXTRACT(payload, '$.<field>'))` (mysql), `json_extract(payload, '$.<field>')` (sqlite). A bare field name is never right; on Mongo it fails silently with an empty result. See SKILL.md, "Query templates: the shape is per-adapter".
 - Args come from the GraphQL call's arguments — `getByFarm(id: "farm-1")` renders `{"payload.farm_id": "farm-1"}` against the target entity's store.
 
 ## The resolver construct

@@ -78,12 +78,44 @@ Both solved a problem Kafka had already solved, and each paid for it: the first 
 
 If you find yourself writing a comparator, a re-sequencer, or a hold-back buffer on the produce side, stop: the correct amount of ordering code above the queue is none.
 
+**Note what was actually wrong in the second case, because the next section recommends single-partition topics.** The fault was not the partition count. It was funnelling *every entity* through *one shared* topic and then writing a comparator and a parking buffer to undo the resulting interleaving. One partition per topic with **one topic per event meshlette** — the next section's recommendation — is the opposite arrangement: no shared funnel, no cross-entity interleaving to undo, and therefore no re-sequencing code. The rule that survives is "write no ordering code above the queue," not "avoid single-partition topics."
+
 ## Ordering versus throughput versus durability is queue configuration — and it belongs to the domain
 
 meshql deliberately does not choose between them for you. It **cannot**: it does not know what matters about your domain, and there is no defensible default.
 
-- **If causal order matters**, configure the queue for it. **Partitioning by aggregate id** — a KafkaJS message `key` of the aggregate's id rather than leaving it null and round-robining — keeps causally-related events (a note and the likes on it; an asset and its lifecycle transitions) in one partition, and therefore ordered, without serialising the whole deployment through a single partition. That is usually the right answer, and it is a configuration decision, not a component you write.
-- **If throughput or durability matter more**, configure for those instead — more partitions, different `acks`/replication factor, different retention — and accept the weaker cross-aggregate ordering that comes with it.
+The general principle holds everywhere: ordering, throughput and durability trade against each other, and which one wins is a fact about your domain, not about the framework. **What differs is which lever you actually have.** On meshobj that lever is topic granularity, not partition keys — and for a reason specific to this language's adapter set. Read the next subsection before setting a partition count.
+
+### There is no meshobj-owned producer, so "key by aggregate id" is not a config you can set
+
+**meshobj has no event-log storage adapter at all.** `repos/` contains exactly four: `mongo_repo`, `mysql_repo`, `postgres_repo`, `sqlite_repo` (registered in `core/cli/src/cli.ts:41-44`). There is no Kafka/ksql plugin, and **no `producer` call anywhere in `repos/` or `core/`** — the only KafkaJS in the repo is a *consumer* in an example worker (`examples/events/src/processor.ts:77`, `this.kafka.consumer({...})`).
+
+So on a meshobj deployment the thing writing to Kafka is **Debezium**, and its message key is derived from the **table primary key**. For the meshobj Postgres envelope table that is `pk`, a surrogate generated *per version* (`repos/postgres_repo/src/postgresRepo.ts:29`):
+
+```typescript
+pk UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+```
+
+That key is not merely per-envelope but **per-version** — even two versions of the same envelope hash to different partitions. `message.key.columns` can redirect the key to a *column* (`id` buys per-envelope grouping), but the **aggregate id lives inside the `payload` JSONB**, not in a column, so aggregate-id partitioning is not reachable without writing an SMT — which is application code in the bridge, exactly what "the bridge is CDC, never application code" rules out.
+
+**The consequence is worse than the feature being missing.** Partition *count* is trivially configurable in `docker-compose.yml`, while the *key* effectively is not. A builder who follows the usual advice — raise the count, expect per-aggregate order — gets one aggregate's events scattered across partitions with no ordering between them, which is strictly worse than leaving it at 1. That is a trap, not a gap.
+
+**What to do instead: one partition per topic, one topic per event meshlette.**
+
+- One partition on every Debezium-fed topic. This gives **total order within each topic** — a stronger guarantee than per-aggregate ordering, not a weaker one. A worker sees every event in its meshlette in append order, with no re-sequencing and no per-key reasoning.
+- Parallelism comes from **topic count**: N event meshlettes are N topics consumed by N independent workers.
+
+State the costs plainly:
+
+- **Single-topic write throughput is the ceiling** for any one meshlette. A high-volume event type cannot be scaled by adding partitions; the only lever is splitting it into more than one meshlette — a domain modelling decision, not a config change.
+- **There is no cross-topic ordering.** Events in different meshlettes have no defined relative order.
+- Consumer parallelism within a meshlette is capped at one — a single-partition topic cannot be shared across a consumer group.
+
+Cross-topic causality is *not* solved by partitioning — it is handled by the rejection mechanism in the next section: a worker that sees an event referencing something it hasn't observed yet emits a rejection, and that rejection **withdraws itself** when the referent arrives. Do not reach for a partition scheme, a re-sequencer, or a hold-back buffer.
+
+**Related upstream gap in the sibling ports.** Where a language *does* ship an event-log adapter, it hardcodes the key the same way and should gain a partition-key selector: Rust's `MerkqlRepository` (`meshql-merkql/src/repository.rs:83`) and Java's `KsqlRepository` (`repos/ksql/.../KsqlRepository.java:109`). Worth knowing if you are reading an architecture document written against one of those runtimes — the recommendation there is identical.
+
+- **If throughput or durability matter more** than ordering, configure for those — different `acks`/replication factor, different retention — and accept the weaker guarantees. Note that on this stack, *adding partitions is not a throughput lever you can take while keeping ordering*; it is a straight trade of ordering for parallelism.
 
 Whatever you choose, **write down in the architecture document what you prioritised and what you gave up.** It is a domain decision, so it belongs where the domain is described — next to the event storm artifact — not implied by a partition count in a `docker-compose.yml` or `debezium/application.properties` that nobody reads as a design statement. A reader six months later must be able to tell the difference between "we chose per-aggregate order over throughput" and "nobody thought about it." Retention deserves the same treatment here specifically, because — as the replay section below notes — a meshobj deployment's replay window is bounded by Kafka retention, not by an unbounded local log.
 
@@ -160,6 +192,7 @@ Note the checkpoint is generally **not** derivable from the published projection
 - Treating a projection as more authoritative than the event log — if they disagree, the log (and the CDC topic, within its retention window) wins and the projection gets rebuilt.
 - A worker fold that isn't idempotent (depends on wall-clock reads, randomness, or external state at fold time) — it breaks replay and makes Kafka's at-least-once delivery unsafe to rely on. (Note `buildProcessedEvent` in the example uses `Math.random()` for a fake `processing_time_ms` — fine for a demo metric, but don't let non-determinism leak into fields that affect projection identity or downstream logic.)
 - **A worker that commits a consumed offset without durably checkpointing its fold state alongside it.** The two are one decision (see above): committing the offset alone means a restart resumes at a position with an empty projector, silently producing a wrong noun rather than an obvious failure.
-- **Machinery to reconstruct a total order before publishing** — a re-sequencer, a parking/hold-back buffer, a single-partition funnel, a physical-row-id cursor. The topic append defines the order; this is code written against a problem that was already solved.
+- **Machinery to reconstruct a total order before publishing** — a re-sequencer, a parking/hold-back buffer, an all-entities-through-one-topic funnel, a physical-row-id cursor. The topic append defines the order; this is code written against a problem that was already solved. (A *per-meshlette* single-partition topic is not this — see "The queue is the ordering authority.")
+- **Raising the partition count on a Debezium-fed topic and expecting per-aggregate ordering.** The message key comes from the table PK — `pk`, a per-*version* UUID (`repos/postgres_repo/src/postgresRepo.ts:29`) — and the aggregate id lives inside the `payload` JSONB where `message.key.columns` cannot reach it. One partition per topic, one topic per event meshlette.
 - **A partition/retention/`acks` choice made silently.** Ordering vs throughput vs durability is a domain decision — record in the architecture document what you prioritised and what you gave up.
 - **A stateful domain check performed at admission and reported as a 4xx**, discarding the fact that the user tried. Admission refuses only what's refusable without domain state; everything else is a rejection object in a projection, queryable by the client.

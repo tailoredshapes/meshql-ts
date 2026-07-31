@@ -18,6 +18,21 @@ Everything is stored as an **Envelope**: `{id, payload, created_at, deleted, aut
 
 **A note on `meshql-iron`'s `event-vs-domain-mesh.md`, if you also have that skill loaded:** it says the event/domain split is "a recommended pattern, not a technology requirement" and tells you not to force it onto plain-CRUD entities. That's correct advice *for a frontend consuming an already-built deployment* — you can't and shouldn't invent an event/domain split for a backend someone else already designed as plain CRUD. It is not license to skip the methodology below when *you* are the one designing the backend from scratch. If you're doing both jobs (building the backend and its frontend in the same task), `domain-design.md`'s guidance governs the design decision; `event-vs-domain-mesh.md` governs how you *read* whatever the backend ends up being once it exists.
 
+## Build the product before the platform
+
+**A storage decision never blocks product work.** Adapters are certified interchangeable and swapping storage is a two-line `Plugin` change (invariant 5). **Build against SQLite first.**
+
+The order that works, with the effort to expect when the event storm already exists:
+
+1. **Events and domain** — the entity list, the schemas, the meshes. **Minutes.**
+2. **Workers** — one per projection. **Under an hour.**
+3. **Config and wiring** — **about three minutes.**
+4. **Storage, scale, benchmarks, adapters** — only once a real requirement names them.
+
+**If a plan's Stage 0 is platform work, that is the smell — reorder it.** A recent rebuild spent hours on storage adapters and a contention benchmark and produced 120 KB of planning documents and zero lines of product code, because its plan front-loaded platform work in direct contradiction of the framework's own first guarantee. **Planning documents are not deliverables.** The one written artifact worth producing before code is the event storm (`references/domain-design.md`) — a domain document, not a platform one.
+
+**Localdev default: SQLite + `merkql-connect`** (or SQLite + Debezium if the pipeline is Kafka-based). One meshobj process, one connector process, one worker process, and **no Docker on the SQLite path** — which is the difference between a pipeline you can run and one you keep meaning to. See "Getting events onto the log" below.
+
 ## The six invariants
 
 Follow these in every change; they are what the architecture excels at:
@@ -27,7 +42,74 @@ Follow these in every change; they are what the architecture excels at:
 3. **Temporal everywhere.** Every GraphQL `Query` field takes `at: Float` (epoch millis). The graphlette layer (`core/graphlette/src/graph/subgraph.ts`'s `addTimestampToQuery`) automatically stamps `at` onto every federated subgraph call if the caller didn't supply one, so point-in-time reads stay consistent across a whole federated chain without any per-resolver code. When adding a query, include `at: Float` in the schema and let the Searcher's version-windowing handle it.
 4. **Authorization rides the Envelope.** `authorized_tokens` on each Envelope is matched against caller credentials extracted by the `Auth` interface (`core/auth`, `core/jwt_auth`, `core/casbin_auth`). Visibility: empty tokens = public, otherwise the caller's tokens must intersect. Repositories and Searchers must filter by tokens on *every* read path — adding a query that skips token filtering is a security bug. (Watch the field name: `mongo_repo`'s `read`/`list` filter on `authorized_readers`, which nothing ever writes — the Envelope field and every other adapter use `authorized_tokens`. Don't copy that name into a new adapter.)
 5. **Storage is pluggable, behavior is certified — and the certification *is* the contract.** Datastores only implement the `Plugin` interface (`createRepository`, `createSearcher`, `cleanup` — `core/server/src/plugin.ts`), backed by `Repository` + `Searcher` (`core/common/src/index.ts`). All business behavior lives above these interfaces. A new adapter must pass the shared BDD certification suite (`core/cert`). Choosing a backend is a question of what you already run, what you know, and what you like — **not** of capability: there is no practical difference in behaviour between the implementations, and that is exactly what the certification suite exists to guarantee. The property this buys you is that you can swap the database engine and replay the queue into the new store without any end user noticing a difference. The consequence that matters: **never depend on a storage-engine property the certification does not guarantee.** See `references/storage-adapters.md`, "Don't reach underneath the abstraction."
-6. **Pick your scale — one size does not fit all.** The same abstraction deliberately has a lightweight form and a heavier distributed form, and choosing a different implementation for dev/test than for production is *idiomatic*, not a compromise. SQLite for a fast local test; Mongo, Postgres, or MySQL for prod (`repos/sqlite_repo`, `repos/mongo_repo`, `repos/postgres_repo`, `repos/mysql_repo`). CDC via Debezium+Kafka for a real projection pipeline (`examples/events`); a single-process modular monolith for something smaller (`examples/farm`). The behavior contract (certification, the `Plugin`/`Repository`/`Searcher` interfaces) is identical; only the deployment weight changes. When you see two ways to run one seam, that is the design working — do not collapse them.
+6. **Pick your scale — one size does not fit all.** The same abstraction deliberately has a lightweight form and a heavier distributed form, and choosing a different implementation for dev/test than for production is *idiomatic*, not a compromise. SQLite for a fast local test; Mongo, Postgres, or MySQL for prod (`repos/sqlite_repo`, `repos/mongo_repo`, `repos/postgres_repo`, `repos/mysql_repo`). Debezium+Kafka for a distributed projection pipeline (`examples/events`); `merkql-connect` onto a merkql topic for a single-node one. The behavior contract (certification, the `Plugin`/`Repository`/`Searcher` interfaces) is identical; only the deployment weight changes. When you see two *certified* ways to run one seam, that is the design working — do not collapse them.
+
+   **What this invariant does not say.** It is not a licence to keep a hand-rolled stand-in for a seam that has a real implementation. The CDC seam is where that went wrong in the sibling ports: the Rust skill's version of this invariant claimed "a poll-based CDC tail in-process; a native change-stream connector in prod" as two implementations of one seam, when only the poller existed and the connector was an intention written in the present tense. The connector now exists — **`merkql-connect`** — and it is a separate process, not an in-process alternative. See "Skills describe what exists".
+
+## Skills describe what exists
+
+This file and every reference under it describe **code that is in the repository now**. Design intent is written in a clearly-marked "not built yet" form — as `domain-design.md`'s "upstream gap" notes do — and **never in the present tense**.
+
+The failure this prevents is cheap to commit and expensive to find. A CDC claim in the sibling skill started as an intention phrased as a description, was repeated into a second document, and by the third nothing distinguished it from working code. Readers — human and agent — then planned against a connector that did not exist. If you are documenting something you are about to build, label it, or do not write it down yet.
+
+## Getting events onto the log: two topologies
+
+Workers consume events from a log. There are exactly **two** valid ways to get committed writes onto that log. Choose once per event meshlette.
+
+### 1. The log is the primary store — no bridge at all
+
+The event mesh's `Repository` writes straight to a log, so the restlette `POST` **is** the append. **meshobj has no such adapter today**, and merkql cannot be one: merkql is an embedded Rust library with no wire protocol, so a TypeScript meshlette cannot be backed by it — see the `merkql-architecture` skill. On this runtime, topology 1 is unavailable; it is described here so you recognise it when reading a Rust deployment's architecture document.
+
+### 2. A database is the primary store — add a connector
+
+The event mesh keeps Postgres, Mongo or SQLite, and a **separate process** replicates each committed write onto the log — Debezium onto a Kafka topic (`examples/events`), or `merkql-connect` onto a merkql topic.
+
+```
+front end ──POST──▶ event restlette ──▶ Postgres / Mongo / SQLite
+    (TS)                                       │
+                                               │ CDC, post-commit
+                                               ▼
+                               Debezium  /  merkql-connect        ← its own process
+                                               │ sole writer
+                                               ▼
+                                       topic (1 partition)
+                                               │
+                                     workers (readers)
+                                               │
+                                               ▼
+                       ──POST──▶ projection restlettes ──▶ Postgres/Mongo/SQLite
+```
+
+In **both** topologies, projections live in a queryable store and are written **only by their own worker**.
+
+### The rule for picking
+
+> **Does this event meshlette need to keep a database?** No → topology 1 (not available here today). Yes → topology 2.
+
+There is no valid third option. In particular, **never publish from application code**: a "save then emit" hook is a dual write with no shared transaction, and a crash between the commit and the publish loses the event permanently while the row survives (`references/domain-design.md`).
+
+### `merkql-connect` is a Rust crate but not a Rust-only tool
+
+`merkql-connect` is a **standalone deployable**, not a library: `merkql-connect <config.toml>`, run beside the database, configured with TOML. It talks to the database and to merkql and to nothing else — no restlette dependency, no shared process, no in-language API. **What wrote the row is irrelevant to it**, which is why it belongs in a TypeScript deployment's toolbox at all. It is the zero-infrastructure alternative to Debezium+Kafka: no Zookeeper, no Connect cluster, no broker. Full reference: `merkql-connect/README.md` in the `meshql-rs` repo.
+
+It is also what makes merkql's single-writer rule survivable. merkql is single-writer per process and does not detect a second one — the log silently loses records. Because the connector is a separate process, the meshobj service writes only to the database and never touches merkql, and workers are readers. The constraint is satisfied by construction. Four separate builds hit it before the connector existed.
+
+Backends: SQLite, MongoDB, PostgreSQL. No polling anywhere — a Postgres logical replication slot woken by a trigger-emitted `NOTIFY`, a Mongo `watch()` whose resume token is the cursor, inotify on the SQLite database's directory with an ordinary connection as the reader.
+
+**What actually works against a meshobj deployment today** — a description of the code, not the design. **Nothing does yet**, and the reason is small: the connector decodes meshql-rs's envelope column and field names, and meshobj's differ.
+
+| meshobj store | Connector expects | meshobj writes |
+|---|---|---|
+| Mongo | `createdAt` (BSON date) | `created_at` |
+| SQLite | `created_at_ms` (epoch millis) | `created_at` (epoch **seconds**, via `strftime('%s')`) |
+| Postgres | `created_at_ms BIGINT`, `authorized_tokens` as a JSON string | `created_at TIMESTAMPTZ`, `authorized_tokens TEXT[]` |
+
+The gap is a decoder — one function per backend — not a design problem, and the SQLite seconds-vs-millis difference is the one that would corrupt `source.ts_ms` silently rather than fail. **Do not plan around this as though it were done, and do not describe it as available.** Until it is closed, Debezium+Kafka is the working CDC path on this runtime.
+
+Two operational hazards to plan for rather than discover, whichever connector you use:
+
+- **A Postgres replication slot pins WAL** — Debezium's as much as `merkql-connect`'s. The heartbeat exists to stop an *idle* slot filling the disk, which is counterintuitive: the low-traffic deployment is the dangerous one, because the slot only advances when the connector advances it while every other table keeps generating WAL. A **stopped** connector still pins WAL — the heartbeat only runs while it is polling. Retiring a connector means `SELECT pg_drop_replication_slot(...)`, not deleting a config file.
+- **SQLite's inotify edge is unavailable on some filesystems**, network mounts especially. `merkql-connect` degrades **loudly** — `NoFeed`, refuse to start — and has deliberately no timer fallback, because a connector that quietly becomes a poller has quietly stopped matching what was deployed.
 
 ## Honesty: as-of freshness
 
@@ -143,6 +225,7 @@ Note what the SQL rows actually say: it is **not** that SQL adapters "don't need
 - **Adding/changing an entity or query** → read `references/adding-an-entity.md`
 - **Relating entities (1:1, 1:N), cross-service resolvers** → read `references/federation.md`
 - **New datastore Plugin, or touching Repository/Searcher internals** → read `references/storage-adapters.md`
+- **Getting events onto a log (Kafka or merkql)** → "Getting events onto the log: two topologies" above, then `merkql-connect/README.md` (in the `meshql-rs` repo) if merkql is the target.
 - **Modeling a domain** (the pattern meshql is built for): identify **events** first (immutable facts), derive **projections** (domain models) from them, and put a CDC-driven **worker** (a small Node/KafkaJS consumer, à la `examples/events/src/processor.ts`) between them. Front ends write events, never domain models — and new domains can be built by replaying history. Full methodology in `references/domain-design.md`. `examples/events/` is the worked reference (Debezium + Kafka CDC pipeline); `examples/farm-cqrs/` shows a read-service/write-service split; `examples/farm/` is the minimal non-event-sourced case.
 - **Custom validation**: JSON Schema via AJV (`core/restlette/src/validation.ts`, `ajv-formats`) is the only built-in write-time check — there's no defaults-merge or post-create-side-effect hook in `Crud` today. If you need one, mount extra Express routes/middleware on the `Application` returned by `init()`, or wrap the `Repository` your `Plugin` constructs. Don't put business rules inside a `Plugin`'s Repository/Searcher implementation itself (see `references/storage-adapters.md`).
 - **Auth beyond the default**: `JWTSubAuthorizer` (`core/jwt_auth`) decodes (does not verify — verification is expected to happen at the API gateway/ingress) a JWT's `sub` claim; wrap with `CasbinAuth.create(casbinParams, jwtSubAuthorizer)` (`core/casbin_auth`) for role-based checks. Set `casbinParams` in the HOCON config to enable it.
@@ -163,5 +246,8 @@ Note what the SQL rows actually say: it is **not** that SQL adapters "don't need
 - A stateful domain refusal reported as a 4xx from AJV validation or admission middleware, discarding the fact that the user tried it. Admission refuses only what's refusable without domain state; the rest is a worker-emitted rejection object (`references/domain-design.md`).
 - A temporal filter using `$lt`/`<` instead of `$lte`/`<=` for "`created_at` at-or-before the requested time" — `mongo_repo`'s `Repository.read` gets this right (`$lte`); its `Searcher.find`/`findAll` use `$lt`, which is a same-millisecond race risk. Match the `$lte` behavior in new code; don't propagate the `$lt` one.
 - Runtime dynamic-loading schemes for storage backends beyond passing a `Plugin` map into `init()` (see "Deployment model").
+- **A second writer on a merkql topic.** merkql is single-writer per process and does not detect a collision; the log silently loses records. Exactly one process appends — the connector — and the meshobj service never touches merkql.
+- **A plan whose Stage 0 is platform work** — storage adapters, contention benchmarks, an infrastructure spike — before any event, entity or worker exists. Build the product first; storage is a two-line change.
+- **A skill, README or design doc describing something unbuilt in the present tense.** Label it "not built yet" or leave it out. This has already cost real work (see "Skills describe what exists").
 
 Do **not** flag the following as vulnerabilities in this codebase — `meshobj/CLAUDE.md`'s "Security Architecture & Common Review Pitfalls" documents them as intentional for a service deployed behind an API gateway: `jwt.decode()` without signature re-verification, Handlebars query templates (admin-authored config, not user input), or wildcard CORS. The one *legitimate* item in that section worth carrying over as a real gotcha: a missing null-check on the `jwt.decode()` result in `core/jwt_auth` — defensive-programming issue, not a security hole, but real.

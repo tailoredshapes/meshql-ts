@@ -30,6 +30,21 @@ Given('I create envelopes:', async function(this: IntegrationWorld, dataTable: D
     }
 });
 
+When('I create many envelopes:', async function(this: IntegrationWorld, dataTable: DataTable) {
+    const rows = dataTable.hashes();
+    const envelopes = rows.map((row) => {
+        const { name, ...rest } = row;
+        const payload = name ? { name, ...rest } : rest;  // Keep name in payload
+        return { payload };
+    });
+
+    const created = await this.repository!.createMany(envelopes);
+
+    for (const envelope of created) {
+        this.envelopes!.set(envelope.payload.name, envelope);
+    }
+});
+
 When('I create a new version of envelope {string}:', async function(this: IntegrationWorld, name: string, dataTable: DataTable) {
     const existingEnvelope = this.envelopes!.get(name);
     if (!existingEnvelope) {

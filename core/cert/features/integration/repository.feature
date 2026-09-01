@@ -82,3 +82,25 @@ Feature: Repository Contract
     And I list all envelopes
     Then I should receive exactly 1 envelope
     And the payload "version" should be "v2"
+
+  Scenario: Creating many envelopes in one call stores all of them
+    When I create many envelopes:
+      | name  | count |
+      | bulk1 | 1     |
+      | bulk2 | 2     |
+      | bulk3 | 3     |
+    Then the envelopes should have generated IDs
+    And listing all envelopes should show exactly 3 envelopes
+
+  Scenario: Listing excludes a removed envelope that has an earlier version
+    Given I create envelopes:
+      | name | version | msg           |
+      | doc1 | v1      | First version |
+    And I wait 50 milliseconds
+    And I create a new version of envelope "doc1":
+      | version | msg            |
+      | v2      | Second version |
+    When I remove envelope "doc1"
+    Then the remove operation should return true
+    And reading envelopes ["doc1"] by their IDs should return nothing
+    And listing all envelopes should show exactly 0 envelopes

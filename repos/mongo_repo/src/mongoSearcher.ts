@@ -1,4 +1,4 @@
-import { Envelope, Searcher } from '@tailoredshapes/meshql-common';
+import { applyLimit, Envelope, Searcher } from '@tailoredshapes/meshql-common';
 import { Auth } from '@tailoredshapes/meshql-auth';
 import { Collection, Document } from 'mongodb';
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
@@ -140,7 +140,12 @@ export class MongoSearcher implements Searcher {
         );
         results = results.filter((_: Document, i: number) => decisions[i]);
 
-        return results.map((d) => {
+        // `limit` arrives as an ordinary query argument. It truncates after the
+        // authorization filter, so a record the caller cannot read never
+        // consumes a slot and hides one the caller can.
+        const limited = applyLimit(results, args.limit);
+
+        return limited.map((d) => {
             let r = d as Schema;
             r.payload.id = r.id;
             r.payload.createdAt = r.created_at?.toISOString();

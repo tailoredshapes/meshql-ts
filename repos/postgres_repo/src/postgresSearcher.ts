@@ -1,4 +1,4 @@
-import { Searcher } from '@tailoredshapes/meshql-common';
+import { applyLimit, Searcher } from '@tailoredshapes/meshql-common';
 import { Auth } from '@tailoredshapes/meshql-auth';
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
 import Handlebars from 'handlebars';
@@ -106,7 +106,12 @@ export class PostgresSearcher implements Searcher {
             );
             const authorizedResults = result.rows.filter((_, i) => decisions[i]);
 
-            return authorizedResults.map((row) => {
+            // `limit` arrives as an ordinary query argument. It truncates after the
+            // authorization filter, so a record the caller cannot read never
+            // consumes a slot and hides one the caller can.
+            const limited = applyLimit(authorizedResults, args.limit);
+
+            return limited.map((row) => {
                 row.payload.id = row.id;
                 row.payload.createdAt = row.created_at?.toISOString();
                 return row.payload;

@@ -54,24 +54,38 @@ Given(
     },
 );
 
+/**
+ * The parameters a search step passes to the searcher. Envelope names in the
+ * data table stand in for ids the test cannot know ahead of time, so resolve
+ * them to the real ids before the template sees them.
+ */
+function queryParams(
+    world: IntegrationWorld,
+    templateName: keyof SearcherTestTemplates,
+    dataTable: DataTable,
+): Record<string, any> {
+    const rows = dataTable.hashes();
+    const params: Record<string, any> = { ...rows[0] }; // Copy to allow mutations
+
+    // Replace envelope names with actual IDs only for templates that search by ID
+    if (templateName === 'findById' && params.id && world.envelopes!.has(params.id)) {
+        const envelope = world.envelopes!.get(params.id);
+        if (envelope?.id) {
+            params.id = envelope.id;
+        }
+    }
+
+    if (!world.templates?.[templateName]) {
+        throw new Error(`Template "${templateName}" not found`);
+    }
+
+    return params;
+}
+
 When(
     'I search using template {string} with parameters:',
     async function (this: IntegrationWorld, templateName: keyof SearcherTestTemplates, dataTable: DataTable) {
-        const rows = dataTable.hashes();
-        const params = { ...rows[0] }; // Copy to allow mutations
-
-        // Replace envelope names with actual IDs only for templates that search by ID
-
-        if (templateName === 'findById' && params.id && this.envelopes!.has(params.id)) {
-            const envelope = this.envelopes!.get(params.id);
-            if (envelope?.id) {
-                params.id = envelope.id;
-            }
-        }
-
-        if (!(this.templates as any)?.[templateName]) {
-            throw new Error(`Template "${templateName}" not found`);
-        }
+        const params = queryParams(this, templateName, dataTable);
 
         this.searchResult = await this.searcher!.find(this.templates![templateName], params);
     },
@@ -80,20 +94,23 @@ When(
 When(
     'I search all using template {string} with parameters:',
     async function (this: IntegrationWorld, templateName: keyof SearcherTestTemplates, dataTable: DataTable) {
-        const rows = dataTable.hashes();
-        const params = { ...rows[0] }; // Copy to allow mutations
+        const params = queryParams(this, templateName, dataTable);
 
-        // Replace envelope names with actual IDs only for templates that search by ID
-        if (templateName === 'findById' && params.id && this.envelopes!.has(params.id)) {
-            const envelope = this.envelopes!.get(params.id);
-            if (envelope?.id) {
-                params.id = envelope.id;
-            }
-        }
+        this.searchResults = await this.searcher!.findAll(this.templates![templateName], params);
+    },
+);
 
-        if (!this.templates?.[templateName]) {
-            throw new Error(`Template "${templateName}" not found`);
-        }
+When(
+    'I search all using template {string} with a limit of {int} and parameters:',
+    async function (
+        this: IntegrationWorld,
+        templateName: keyof SearcherTestTemplates,
+        limit: number,
+        dataTable: DataTable,
+    ) {
+        // The limit reaches the searcher as an ordinary query argument, the
+        // same route every other parameter takes.
+        const params = { ...queryParams(this, templateName, dataTable), limit };
 
         this.searchResults = await this.searcher!.findAll(this.templates![templateName], params);
     },

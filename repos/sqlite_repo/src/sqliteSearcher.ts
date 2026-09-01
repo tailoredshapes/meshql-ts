@@ -1,4 +1,4 @@
-import { Searcher, Envelope } from '@tailoredshapes/meshql-common';
+import { applyLimit, Searcher, Envelope } from '@tailoredshapes/meshql-common';
 import { Auth } from '@tailoredshapes/meshql-auth';
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
 import Handlebars from 'handlebars';
@@ -100,7 +100,12 @@ export class SQLiteSearcher implements Searcher {
         const decisions = await Promise.all(envelopes.map((row) => this.authorizer.isAuthorized(creds, row)));
         const authorizedResults = envelopes.filter((_, i) => decisions[i]);
 
-        return authorizedResults.map((row) => {
+        // `limit` arrives as an ordinary query argument. It truncates after the
+        // authorization filter, so a record the caller cannot read never
+        // consumes a slot and hides one the caller can.
+        const limited = applyLimit(authorizedResults, args.limit);
+
+        return limited.map((row) => {
             const result = row as Envelope;
             result.payload.id = result.id;
             result.payload.createdAt = new Date(result.created_at as unknown as number).toISOString();

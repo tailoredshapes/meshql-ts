@@ -1,4 +1,4 @@
-import { Searcher } from '@tailoredshapes/meshql-common';
+import { applyLimit, Searcher } from '@tailoredshapes/meshql-common';
 import { Auth } from '@tailoredshapes/meshql-auth';
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
 import Handlebars from 'handlebars';
@@ -110,7 +110,12 @@ export class MySQLSearcher implements Searcher {
             const decisions = await Promise.all(envelopes.map((e) => this.authorizer.isAuthorized(creds, e)));
             const authorizedResults = envelopes.filter((_, i) => decisions[i]);
 
-            return authorizedResults.map((envelope) => {
+            // `limit` arrives as an ordinary query argument. It truncates after the
+            // authorization filter, so a record the caller cannot read never
+            // consumes a slot and hides one the caller can.
+            const limited = applyLimit(authorizedResults, args.limit);
+
+            return limited.map((envelope) => {
                 const payload = envelope.payload;
                 payload.id = envelope.id;
                 payload.createdAt = envelope.created_at?.toISOString();

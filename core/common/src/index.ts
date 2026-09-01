@@ -81,6 +81,22 @@ export interface Searcher {
     ready: () => Promise<boolean>;
 }
 
+/**
+ * Truncates a result set to a `limit` query argument.
+ *
+ * A searcher passes the raw `args.limit` it received. An absent or
+ * unparseable limit leaves the results untouched, so a query without a limit
+ * behaves exactly as it did before.
+ */
+export function applyLimit<T>(results: T[], limit: unknown): T[] {
+    if (limit === undefined || limit === null) return results;
+
+    const count = Number(limit);
+    if (!Number.isFinite(count)) return results;
+
+    return results.slice(0, Math.max(Math.trunc(count), 0));
+}
+
 export interface Validator {
     (data: Record<string, any>): Promise<boolean>;
 }

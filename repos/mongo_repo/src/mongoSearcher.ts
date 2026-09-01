@@ -64,6 +64,12 @@ export class MongoSearcher implements Searcher {
             $lte: new Date(timestamp),
         };
 
+        // `MongoRepository.remove` flags a document rather than dropping it,
+        // and marks it the way `MongoRepository.read` looks for. Skip this and
+        // a tombstoned record stays readable through `getById` forever, which
+        // is what the Postgres and MySQL adapters already refuse to do.
+        query.deleted = { $exists: false };
+
         let doc = await this.db
             .find(query)
             .sort({ created_at: -1 })
@@ -109,6 +115,7 @@ export class MongoSearcher implements Searcher {
         let query = this.processQueryTemplate(args, queryTemplate);
 
         query.created_at = time_filter;
+        query.deleted = { $exists: false };
 
         let results = await this.db
             .aggregate([

@@ -10,11 +10,16 @@ export class SQLiteSearcher implements Searcher {
     private authorizer: Auth;
     private dtoFactory: DTOFactory;
 
+    // `deleted = 0` matches the vector template below, and the Postgres and
+    // MySQL adapters. Without it a tombstoned record stays readable through
+    // `getById` forever: `Repository.remove` flags the row rather than
+    // dropping it, and this query never looked at the flag.
     private singletonTemplate = Handlebars.compile(`
         SELECT *
         FROM {{_name}}
         WHERE {{{filters}}}
          AND created_at <= {{_created_at}}
+         AND deleted = 0
         ORDER BY created_at DESC
         LIMIT 1
     `);

@@ -414,12 +414,20 @@ export class AuthzEnv {
     /**
      * A JWT for a caller. Unsigned-in-practice: `JWTSubAuthorizer` decodes
      * without verifying because signature validation belongs at the gateway.
+     *
+     * Static, because the contract certification mints tokens for the same
+     * callers against a different service and both need one source for the
+     * caller-to-subject mapping.
      */
-    tokenFor(caller: AuthzCaller): string | undefined {
+    static bearerFor(caller: AuthzCaller): string | undefined {
         if (caller === 'anonymous') return undefined;
         const sub = AuthzEnv.subjects[caller];
         if (!sub) throw new Error(`Unknown caller "${caller}"`);
         return unverifiedToken(sub);
+    }
+
+    tokenFor(caller: AuthzCaller): string | undefined {
+        return AuthzEnv.bearerFor(caller);
     }
 
     private headers(caller: AuthzCaller): Record<string, string> {

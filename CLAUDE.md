@@ -275,10 +275,34 @@ Invariants it pins down:
   and no more. There is no "skip the check when creds are empty" shortcut.
 - **`at:` rewinds data, not authorization.**
 
-If you add a storage backend, wire it into the suite the way
+### The shared authorization contract
+
+`core/cert/features/contract` is the `meshql-contract` submodule: the Gherkin
+that TypeScript, Java, and Rust all run unchanged. `repository.feature` and
+`searcher.feature` are symlinked into `features/integration`; `authz.feature`
+is symlinked into `features/e2e`, because it drives a server rather than a
+`Repository`.
+
+The contract asserts **what a caller can see, never what status a refusal
+carries** — the status is each server's own business, and the three
+implementations do not agree on it. That is why `authorization.feature` above
+stays: it is this repository's server-level suite and it does assert statuses.
+
+Its bindings live in `core/cert/src/steps/contract_authz.steps.ts` over
+`core/cert/src/support/widgets.ts`. Two things about that harness are load
+bearing:
+
+- **A service per scenario.** The contract lists every widget and asserts the
+  result exactly, so "all" has to mean all. The Background step stands up a
+  fresh service over a fresh empty table, and the `After` hook shuts it down.
+- **The same credentials as `AuthzEnv`.** Callers, subjects, and the casbin
+  policy are shared; only the stored document and the queries differ.
+
+If you add a storage backend, wire it into both suites the way
 `repos/*/test/e2e/support/hooks.ts` does: one `AuthzEnv` on its own
 table/collection and its own port (`port + 100` — the Fetch spec blocks a
-handful of ports, 4045 among them).
+handful of ports, 4045 among them), and one `WidgetHarness` at `port + 200`,
+which claims one port per contract scenario.
 
 ## Configuration System
 

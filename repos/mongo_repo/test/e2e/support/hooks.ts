@@ -1,11 +1,18 @@
 import { Before, AfterAll, BeforeAll } from '@cucumber/cucumber';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import Log4js from 'log4js';
-import { FarmTestWorld, DBFactories, FarmQueries, AuthzTestWorld, unverifiedToken } from '@tailoredshapes/meshql-cert';
+import {
+    FarmTestWorld,
+    DBFactories,
+    FarmQueries,
+    AuthzTestWorld,
+    ContractAuthzWorld,
+    unverifiedToken,
+} from '@tailoredshapes/meshql-cert';
 import { MongoConfig, MongoPlugin } from '../../../src';
 import { Plugin } from '@tailoredshapes/meshql-server';
 import { Server } from 'node:http';
-import { FarmEnv, AuthzEnv } from '@tailoredshapes/meshql-cert';
+import { FarmEnv, AuthzEnv, WidgetHarness } from '@tailoredshapes/meshql-cert';
 
 Log4js.configure({
     appenders: { out: { type: 'stdout' } },
@@ -20,6 +27,7 @@ let server: Server;
 let farmEnv: FarmEnv;
 let authzEnv: AuthzEnv;
 let authzServer: Server;
+let widgetHarness: WidgetHarness;
 
 BeforeAll({ timeout: 120000 }, async function () {
     mongod = new MongoMemoryServer();
@@ -87,12 +95,23 @@ BeforeAll({ timeout: 120000 }, async function () {
         port + 100,
     );
     authzServer = await authzEnv.buildService(plugins);
+
+    // The shared authorization contract. It lists every widget and asserts
+    // the result exactly, so each scenario gets its own service over its own
+    // empty collection and its own port.
+    widgetHarness = new WidgetHarness(
+        (index: number): MongoConfig => ({ ...config, collection: `${PREFIX}-${ENV}-widget-${index}` }),
+        { byId: queries.henById, byKind: `{"payload.kind": "{{kind}}"}` },
+        plugins,
+        port + 200,
+    );
 });
 
-Before(async function (this: FarmTestWorld & AuthzTestWorld) {
+Before(async function (this: FarmTestWorld & AuthzTestWorld & ContractAuthzWorld) {
     this.server = server;
     this.env = farmEnv;
     this.authz = authzEnv;
+    this.widgetHarness = widgetHarness;
 });
 
 AfterAll(async function () {

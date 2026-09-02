@@ -1,7 +1,6 @@
 import { DTOFactory } from './dto.js';
 import HandleBars from 'handlebars';
-import { Searcher, RootConfig } from '@tailoredshapes/meshql-common';
-import { Auth } from '@tailoredshapes/meshql-auth';
+import { Auth, RootConfig, Searcher, Session } from '@tailoredshapes/meshql-common';
 
 import Log4js from 'log4js';
 
@@ -50,11 +49,13 @@ const getTimestamp = (args: Record<string, any>): number => {
 function vector(repo: Searcher, dtoFactory: DTOFactory, authorizer: Auth, queryTemplate: string, name: string) {
     let qt = HandleBars.compile(queryTemplate);
     return async (args: any, context: any): Promise<Record<string, any>[]> => {
-        let creds = await authorizer.getAuthToken(context);
+        // The session is resolved from the request and handed to the searcher,
+        // which asks it about each envelope it found. The resolver never sees
+        // a credential and never decides anything itself.
+        let session: Session = await authorizer.authenticate(context);
         let timestamp = getTimestamp(args);
-        let results: Record<string, any>[] = await repo.findAll(qt, args, creds, timestamp);
+        let results: Record<string, any>[] = await repo.findAll(qt, args, session, timestamp);
 
-        // let payloads = results.map((v: Record<string, any>) => v)
         let filledResult = dtoFactory.fillMany(results, timestamp);
         logger.trace(`${name} Results ${JSON.stringify(filledResult)} for ${queryTemplate}, ${JSON.stringify(args)}`);
         return filledResult;
@@ -64,9 +65,9 @@ function vector(repo: Searcher, dtoFactory: DTOFactory, authorizer: Auth, queryT
 function singleton(repo: Searcher, dtoFactory: DTOFactory, authorizer: Auth, queryTemplate: string, name: string) {
     let qt = HandleBars.compile(queryTemplate);
     return async (args: any, context: any): Promise<Record<string, any>> => {
-        let creds = await authorizer.getAuthToken(context);
+        let session: Session = await authorizer.authenticate(context);
         let timestamp = getTimestamp(args);
-        let payload = await repo.find(qt, args, creds, timestamp);
+        let payload = await repo.find(qt, args, session, timestamp);
 
         logger.trace(`${name} DB Result ${JSON.stringify(payload)} for ${queryTemplate}, ${JSON.stringify(args)}`);
 

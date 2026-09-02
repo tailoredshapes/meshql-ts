@@ -6,7 +6,6 @@ import { MongoRepository } from './mongoRepo';
 import { MongoClient, Collection } from 'mongodb';
 import { StorageConfig } from '@tailoredshapes/meshql-server';
 import { Envelope } from '@tailoredshapes/meshql-common';
-import { Auth } from '@tailoredshapes/meshql-auth';
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
 import { Plugin } from '@tailoredshapes/meshql-server';
 /**
@@ -46,8 +45,8 @@ export class MongoPlugin implements Plugin {
         return createMongoRepository(config as MongoConfig, this.clients);
     }
 
-    async createSearcher(config: StorageConfig, dtoFactory: DTOFactory, auth: Auth) {
-        return createMongoSearcher(config as MongoConfig, dtoFactory, auth, this.clients);
+    async createSearcher(config: StorageConfig, dtoFactory: DTOFactory) {
+        return createMongoSearcher(config as MongoConfig, dtoFactory, this.clients);
     }
 
     async cleanup() {
@@ -57,17 +56,16 @@ export class MongoPlugin implements Plugin {
     }
 }
 /**
- * Creates a MongoSearcher with the given config, DTO factory, and auth.
+ * Creates a MongoSearcher with the given config and DTO factory.
  */
 export async function createMongoSearcher(
     mongoConfig: MongoConfig,
     dtoFactory: DTOFactory,
-    auth: Auth,
     clients: Record<string, MongoClient>,
 ) {
     const collection = await buildMongoCollection(mongoConfig, clients);
     const client = clients[mongoConfig.uri];
-    return new MongoSearcher(collection, dtoFactory, auth, client, mongoConfig.collection);
+    return new MongoSearcher(collection, dtoFactory, client, mongoConfig.collection);
 }
 
 /**

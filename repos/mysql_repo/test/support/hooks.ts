@@ -7,10 +7,8 @@ import { createPool, Pool } from 'mysql2/promise';
 import { GenericContainer, StartedTestContainer } from 'testcontainers';
 import { compile } from 'handlebars';
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
-import { NoOp } from '@tailoredshapes/meshql-auth';
 import { randomUUID } from 'crypto';
 import { init, Plugin, StorageConfig } from '@tailoredshapes/meshql-server';
-import { Auth } from '@tailoredshapes/meshql-auth';
 import { config as getFarmConfig } from '../config';
 import Log4js from 'log4js';
 import { MySQLConfig } from '../../src';
@@ -42,7 +40,7 @@ class MySQLPlugin implements Plugin {
         return repo;
     }
 
-    async createSearcher(config: StorageConfig, dtoFactory: DTOFactory, auth: Auth) {
+    async createSearcher(config: StorageConfig, dtoFactory: DTOFactory) {
         const mysqlConfig = config as MySQLConfig;
         const pool = createPool({
             host: mysqlConfig.host,
@@ -55,7 +53,7 @@ class MySQLPlugin implements Plugin {
         });
         this.pools.push(pool);
 
-        return new MySQLSearcher(pool, mysqlConfig.table, dtoFactory, auth);
+        return new MySQLSearcher(pool, mysqlConfig.table, dtoFactory);
     }
 
     async cleanup() {
@@ -170,8 +168,7 @@ Before(async function (this: TestWorld & FarmTestWorld) {
         await repo.initialize();
 
         const dtoFactory = new DTOFactory([]);
-        const auth = new NoOp();
-        const searcher = new MySQLSearcher(pool, tableName, dtoFactory, auth);
+        const searcher = new MySQLSearcher(pool, tableName, dtoFactory);
 
         return { repository: repo, searcher };
     };

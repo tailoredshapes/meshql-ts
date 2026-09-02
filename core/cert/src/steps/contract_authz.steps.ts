@@ -1,5 +1,6 @@
 import { Given, When, Then, After } from '@cucumber/cucumber';
 import assert from 'assert';
+import { Envelope } from '@tailoredshapes/meshql-common';
 import { AuthzCaller, AuthzEnv } from '../support/worlds';
 import { ContractAuthzWorld, WidgetService, WidgetView } from '../support/widgets';
 
@@ -29,6 +30,18 @@ function names(views: WidgetView[]): string[] {
 
 function visible(view: WidgetView | null | undefined): boolean {
     return !!view && typeof view.name === 'string';
+}
+
+/**
+ * The tokens on an envelope's mark, for the two steps that assert them.
+ *
+ * `Envelope.auth` is opaque -- storage never looks inside it and neither does
+ * any lette. The certification may, because these two steps exist to check
+ * what the *token* plugin stamped; a plugin that stamps something else reads
+ * as carrying no tokens, which is exactly what `auth_plugin.feature` asserts.
+ */
+function marks(envelope: Envelope): string[] {
+    return Array.isArray(envelope.auth) ? (envelope.auth as string[]) : [];
 }
 
 Given('an authorizing MeshQL server is running', async function (this: ContractAuthzWorld) {
@@ -118,7 +131,11 @@ Then(
     async function (this: ContractAuthzWorld, name: string) {
         const envelope = await service(this).storedEnvelope(name);
         assert.ok(envelope, `no envelope stored for "${name}"`);
-        assert.deepStrictEqual(envelope!.authorized_tokens ?? [], [], 'a write with no credentials must stay public');
+        // "No tokens" covers both a token plugin that resolved none and a
+        // plugin that marks records with something other than tokens, or with
+        // nothing at all. The mark is the plugin's; this only asserts it is
+        // carrying no tokens.
+        assert.deepStrictEqual(marks(envelope!), [], 'a write with no credentials must stay public');
     },
 );
 
@@ -132,7 +149,7 @@ Then(
         assert.ok(expected, `Unknown caller "${caller}"`);
 
         assert.deepStrictEqual(
-            [...(envelope!.authorized_tokens ?? [])].sort(),
+            [...marks(envelope!)].sort(),
             [...expected].sort(),
             'the tokens Auth resolved for the caller must be the tokens that were persisted',
         );

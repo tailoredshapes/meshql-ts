@@ -28,6 +28,7 @@
         "@tailoredshapes/meshql-casbin_auth": "^0.2.0",
         "@tailoredshapes/meshql-common": "^0.2.0",
         "@tailoredshapes/meshql-graphlette": "^0.2.0",
+        "@tailoredshapes/meshql-jwt_auth": "^0.2.0",
         "@tailoredshapes/meshql-server": "^0.2.0",
         "ajv": "^8.17.1",
         "ajv-formats": "^3.0.1",

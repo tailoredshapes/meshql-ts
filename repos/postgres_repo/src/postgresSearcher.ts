@@ -1,5 +1,4 @@
-import { applyLimit, Searcher } from '@tailoredshapes/meshql-common';
-import { Auth } from '@tailoredshapes/meshql-auth';
+import { applyLimit, authorized, Envelope, Searcher, Session } from '@tailoredshapes/meshql-common';
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
 import Handlebars from 'handlebars';
 import { getLogger } from 'log4js';
@@ -10,7 +9,6 @@ const logger = getLogger('meshql-ts/postgressearcher');
 export class PostgresSearcher implements Searcher {
     private pool: Pool;
     private table: string;
-    private authorizer: Auth;
     private dtoFactory: DTOFactory;
 
     private singletonQuery = Handlebars.compile(`
@@ -32,11 +30,10 @@ export class PostgresSearcher implements Searcher {
         ORDER BY id, created_at DESC
         `);
 
-    constructor(pool: Pool, table: string, dtoFactory: DTOFactory, authorizer: Auth) {
+    constructor(pool: Pool, table: string, dtoFactory: DTOFactory) {
         this.pool = pool;
         this.table = table;
         this.dtoFactory = dtoFactory;
-        this.authorizer = authorizer;
     }
 
     /**
@@ -46,13 +43,23 @@ export class PostgresSearcher implements Searcher {
         return queryTemplate(parameters);
     }
 
+    private static toEnvelope(row: any): Envelope {
+        return {
+            id: row.id,
+            payload: row.payload,
+            created_at: row.created_at,
+            deleted: !!row.deleted,
+            auth: row.auth === null ? undefined : row.auth,
+        };
+    }
+
     /**
      * Finds a single record based on the query template and arguments.
      */
     async find(
         queryTemplate: Handlebars.TemplateDelegate,
         args: Record<string, any>,
-        creds: string[] = [],
+        session: Session,
         timestamp: number = Date.now(),
     ): Promise<Record<string, any>> {
         args._createdAt = new Date(timestamp).toISOString();
@@ -65,12 +72,12 @@ export class PostgresSearcher implements Searcher {
             const result = await this.pool.query(sql);
 
             if (result.rows.length > 0) {
-                let row = result.rows[0];
+                const envelope = PostgresSearcher.toEnvelope(result.rows[0]);
 
-                if (await this.authorizer.isAuthorized(creds, row)) {
-                    row.payload.id = row.id;
-                    row.payload.createdAt = row.created_at?.toISOString();
-                    return this.dtoFactory.fillOne(row.payload, timestamp);
+                if (await session.isAuthorized('read', envelope)) {
+                    envelope.payload.id = envelope.id;
+                    envelope.payload.createdAt = envelope.created_at?.toISOString();
+                    return this.dtoFactory.fillOne(envelope.payload, timestamp);
                 }
             }
         } catch (err) {
@@ -86,7 +93,7 @@ export class PostgresSearcher implements Searcher {
     async findAll(
         queryTemplate: Handlebars.TemplateDelegate,
         args: Record<string, any>,
-        creds: string[] = [],
+        session: Session,
         timestamp: number = Date.now(),
     ): Promise<Record<string, any>[]> {
         args._createdAt = new Date(timestamp).toISOString();
@@ -98,23 +105,18 @@ export class PostgresSearcher implements Searcher {
         try {
             const result = await this.pool.query(sql);
 
-            // `isAuthorized` is async: filtering on it directly tests a Promise,
-            // which is always truthy, so every row survives regardless of
-            // credentials. Resolve first, then filter on the resolved booleans.
-            const decisions = await Promise.all(
-                result.rows.map((row) => this.authorizer.isAuthorized(creds, row)),
-            );
-            const authorizedResults = result.rows.filter((_, i) => decisions[i]);
+            const envelopes = result.rows.map(PostgresSearcher.toEnvelope);
+            const authorizedResults = await authorized(session, 'read', envelopes);
 
             // `limit` arrives as an ordinary query argument. It truncates after the
             // authorization filter, so a record the caller cannot read never
             // consumes a slot and hides one the caller can.
             const limited = applyLimit(authorizedResults, args.limit);
 
-            return limited.map((row) => {
-                row.payload.id = row.id;
-                row.payload.createdAt = row.created_at?.toISOString();
-                return row.payload;
+            return limited.map((envelope) => {
+                envelope.payload.id = envelope.id;
+                envelope.payload.createdAt = envelope.created_at?.toISOString();
+                return envelope.payload;
             });
         } catch (err) {
             logger.error(`Error executing findAll query: ${err} for ${sql}`);

@@ -1,8 +1,15 @@
 import { Given, When, Then } from '@cucumber/cucumber';
 import assert from 'assert';
+import { SystemSession } from '@tailoredshapes/meshql-auth';
+import { Envelope } from '@tailoredshapes/meshql-common';
 import { AuthzCaller, AuthzTestWorld } from '../support/worlds';
 
 const HEN_SELECTION = 'id name eggs';
+
+/** The tokens on an envelope's mark. See `contract_authz.steps.ts`. */
+function marks(envelope: Envelope): string[] {
+    return Array.isArray(envelope.auth) ? (envelope.auth as string[]) : [];
+}
 
 /**
  * Names are unique per scenario, but two callers may legitimately create a
@@ -41,7 +48,7 @@ When('{string} creates a hen named {string}', async function (this: AuthzTestWor
 Then('the stored envelope should have authorized tokens {string}', async function (this: AuthzTestWorld, expected: string) {
     const created = this.lastCreated!;
     const repo = await this.authz.repository();
-    const envelope = await repo.read(created.id);
+    const envelope = await repo.read(created.id, SystemSession);
 
     assert.ok(envelope, `no envelope stored for ${created.name}`);
 
@@ -51,7 +58,7 @@ Then('the stored envelope should have authorized tokens {string}', async functio
         .filter(Boolean);
 
     assert.deepStrictEqual(
-        [...(envelope!.authorized_tokens ?? [])].sort(),
+        [...marks(envelope!)].sort(),
         [...expectedTokens].sort(),
         'the tokens Auth resolved for the caller must be the tokens that were persisted',
     );
@@ -60,10 +67,10 @@ Then('the stored envelope should have authorized tokens {string}', async functio
 Then('the stored envelope should have no authorized tokens', async function (this: AuthzTestWorld) {
     const created = this.lastCreated!;
     const repo = await this.authz.repository();
-    const envelope = await repo.read(created.id);
+    const envelope = await repo.read(created.id, SystemSession);
 
     assert.ok(envelope, `no envelope stored for ${created.name}`);
-    assert.deepStrictEqual(envelope!.authorized_tokens ?? [], [], 'an uncredentialed write must stay public');
+    assert.deepStrictEqual(marks(envelope!), [], 'an uncredentialed write must stay public');
 });
 
 // --- Reads through the graphlette ------------------------------------------

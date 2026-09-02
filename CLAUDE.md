@@ -224,7 +224,7 @@ cors({ origin: '*' })
 
 When reviewing security, verify:
 - [ ] Changes don't bypass authorization checks
-- [ ] `authorized_tokens` are properly enforced
+- [ ] Every read path asks the session rather than deciding for itself
 - [ ] Configuration templates are admin-controlled
 - [ ] JWT claims extraction has null checks
 - [ ] Error messages don't leak sensitive data
@@ -237,7 +237,7 @@ Do NOT flag as vulnerabilities:
 ### Legitimate Security Concerns
 
 Focus reviews on:
-1. **Authorization logic** - Are `authorized_tokens` properly enforced?
+1. **Authorization logic** - Does every read path ask `Session.isAuthorized`?
 2. **Error handling** - Are errors properly propagated or silently swallowed?
 3. **Input validation** - Are GraphQL/REST inputs validated against schemas?
 4. **Null safety** - Are optional values safely handled (e.g., jwt.decode null check)?
@@ -259,21 +259,50 @@ structurally cannot see them.**
 
 Invariants it pins down:
 
-- **Tokens must survive the write path.** `Crud` resolves the caller's tokens
-  onto `Envelope.authorized_tokens`; the envelope is the source of truth and
-  the `tokens` parameter on `Repository.create` is only a fallback for direct
-  callers. A record stored with `[]` is public — so silently dropping the
-  tokens makes everything public.
-- **Vector/list queries must filter.** `Auth.isAuthorized` is async;
+- **The mark must survive the write path.** `Repository.create` asks
+  `Session.stamp` for the envelope to persist, and stores what comes back in the
+  same statement as the payload. Authorization is never a second write, so a
+  crash cannot leave a record present with its mark missing.
+- **Vector/list queries must filter.** `Session.isAuthorized` is async;
   `Array.filter` over it tests a Promise and authorizes everything. Resolve the
-  decisions first, then filter.
+  decisions first, then filter — `authorized()` in `core/common` does this and
+  is what every adapter calls.
 - **The request must reach the GraphQL context.** Resolvers pass the context to
-  `Auth.getAuthToken`, which reads the caller's headers. Cross-service resolvers
+  `Auth.authenticate`, which reads the caller's headers. Cross-service resolvers
   read the auth header off the context too, so credentials survive a hop.
-- **No credentials is permitted, and stays permitted.** An empty token list on a
-  record means public; an uncredentialed caller reaches exactly those records
-  and no more. There is no "skip the check when creds are empty" shortcut.
+- **No credentials is permitted, and stays permitted.** An uncredentialed caller
+  reaches exactly the public records and no more. Whether an empty mark means
+  public is the token plugin's rule, not the framework's, and it lives in
+  `core/jwt_auth`.
 - **`at:` rewinds data, not authorization.**
+
+### The auth plugin owns authorization
+
+`core/cert/features/contract/specs/auth-plugin-owns-authorization.md` is the
+spec, and `auth_plugin.feature` certifies it. The whole plugin surface is:
+
+```typescript
+Auth:    authenticate(requestContext): Promise<Session>
+Session: stamp(envelope): Promise<Envelope>
+         isAuthorized(operation, envelope): Promise<boolean>   // read | create | remove
+```
+
+**An implementation that relies on anything outside it is out of spec.** In
+particular:
+
+- `Envelope.auth` is the plugin's mark and it is `unknown`. Storage persists it
+  verbatim and never reads it. A token plugin stamps a list of strings; the
+  `owner` plugin in the cert suite stamps nothing at all.
+- No `Repository` or `Searcher` method takes credentials. They take a
+  `Session`, and they fetch and then ask.
+- There is **no unset session**. Work outside a request — a worker, a
+  migration, the certification peeking at storage — passes `SystemSession`
+  explicitly. An absent session is a compile error, not a silent allow.
+- The wildcard rule, the empty-mark-means-public rule, and copying the caller's
+  credentials onto a write all live in `TokenSession` (`core/jwt_auth`) and
+  nowhere else. Do not reimplement any of them in a lette or an adapter.
+- Adding a helper that lets a caller decide visibility without asking the
+  session re-creates exactly the bypass this design removed. Don't.
 
 ### The shared authorization contract
 
@@ -327,7 +356,6 @@ Uses HOCON format for configuration files. Key structure:
       path: "/api/rest"
       storage: { type: "mongo", uri: "...", collection: "..." }
       schema: { /* JSON Schema */ }
-      tokens: ["auth_token"]  // Optional auth
     }
   ]
 }
@@ -340,7 +368,7 @@ All database backends implement the Plugin interface:
 ```typescript
 interface Plugin {
   createRepository(config: StorageConfig): Promise<Repository>
-  createSearcher(config: StorageConfig, dtoFactory: DTOFactory, auth: Auth): Promise<Searcher>
+  createSearcher(config: StorageConfig, dtoFactory: DTOFactory): Promise<Searcher>
   cleanup(): Promise<void>
 }
 ```

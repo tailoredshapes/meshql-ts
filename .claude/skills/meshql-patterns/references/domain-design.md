@@ -29,7 +29,7 @@ Steps 1–2 above are usually done badly when done silently in your head. **Even
 |---|---|
 | **Domain Events** (past tense: "Order Placed", "User Logged In") | Event-mesh entities — the verbs. Each becomes a create-only restlette. |
 | **Commands** (imperative: "Place Order", "Log In") | The REST payload shape of a `POST` to the corresponding event restlette. |
-| **Actors / Roles** (who issues a command — a customer, an editor, a system) | Casbin roles (`CasbinAuth.create(casbinParams, jwtSubAuthorizer)`, `core/casbin_auth`, see "Auth beyond the default" in `SKILL.md`'s decision guide) — who's authorized to write which event. Don't default to the open/no-auth path once you've named actors; wire the roles you just identified. |
+| **Actors / Roles** (who issues a command — a customer, an editor, a system) | Casbin roles (`CasbinAuth.create(casbinParams)`, `core/casbin_auth`, see "Auth beyond the default" in `SKILL.md`'s decision guide) — who's authorized to write which event. Don't default to the open/no-auth path once you've named actors; wire the roles you just identified. |
 | **Policies** ("whenever X happens, then Y should happen") | **Workers.** A policy *is* a worker's fold-and-react loop — this is the most direct mapping in the table. A multi-step policy (event → triggers a new command → new event) is a worker that, after folding, also issues a follow-up write via REST. |
 | **Aggregates** (the consistency boundary around a command) | The event mesh's write-side boundary — what one event commits atomically, and what a restlette's validators should actually check. |
 | **Read Models / Views** (what someone needs to see) | Domain/projection meshes — the nouns from step 2 above, one worker each. |
@@ -137,7 +137,7 @@ It recurses cleanly: triaging a rejection is itself an event (`*_acknowledged`) 
 
 A gate in front of the event restlettes — AJV validation, auth middleware — refuses only what is refusable **without domain state**:
 
-- **authorization** — may this caller write this kind of event at all (`CasbinAuth`, `authorized_tokens`);
+- **authorization** — may this caller write this kind of event at all (`CasbinAuth`, `Session.isAuthorized('create', ...)`);
 - **schema validity** — does the payload match the entity's JSON Schema (`core/restlette/src/validation.ts`);
 - **create-only** — an event mesh takes `POST` and nothing else.
 

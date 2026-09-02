@@ -5,7 +5,6 @@ import Log4js from 'log4js';
 import { IntegrationWorld, SearcherTestTemplates } from '@tailoredshapes/meshql-cert';
 import { MongoConfig, MongoPlugin } from '../../../src';
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
-import { NoOp } from '@tailoredshapes/meshql-auth';
 
 Log4js.configure({
     appenders: { out: { type: 'stdout' } },

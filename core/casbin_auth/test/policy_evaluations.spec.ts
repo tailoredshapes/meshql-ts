@@ -2,17 +2,16 @@ import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { CasbinAuth } from '../src';
-import { Auth } from '@tailoredshapes/meshql-auth';
-import { Envelope } from '@tailoredshapes/meshql-common';
+import { CasbinAuth, CredentialResolver } from '../src';
+import { Envelope, Session } from '@tailoredshapes/meshql-common';
 
 /**
  * MeshQL resolves identity to capabilities *once*, at the boundary, and then
- * carries the answer down. `CasbinAuth.getAuthToken` asks casbin for a
+ * carries the answer down. `CasbinAuth.authenticate` asks casbin for a
  * subject's roles and stops there; it never calls `enforcer.enforce(...)`, and
- * every check below it - `isAuthorized`, called by each repo and searcher - is
- * a local intersection of that token set against a record's
- * `authorized_tokens`.
+ * every check below it - `Session.isAuthorized`, called by each repo and
+ * searcher - is a local intersection of that token set against a record's
+ * mark.
  *
  * That absence is a design decision, not an oversight, and it does not look
  * like one. A scanner sees an authorization library whose decision method is
@@ -75,19 +74,16 @@ g, bob, tenant_b
     let casbinAuth: CasbinAuth;
 
     /**
-     * A caller whose JWT resolves to the subject `alice`. `JWTSubAuthorizer`
+     * A caller whose JWT resolves to the subject `alice`. `credentialsOf`
      * decodes rather than verifies, by design - the edge authenticates, MeshQL
      * authorizes - so a stub that yields the subject is faithful.
      */
-    const subjectAuth: Auth = {
-        getAuthToken: async () => ['alice'],
-        isAuthorized: async () => true,
-    };
+    const subjectResolver: CredentialResolver = () => ['alice'];
 
     const records: Envelope[] = [
-        { id: 'hen-1', payload: { name: 'Chuck' }, authorized_tokens: ['tenant_a'] },
-        { id: 'hen-2', payload: { name: 'Duck' }, authorized_tokens: ['tenant_b'] },
-        { id: 'hen-3', payload: { name: 'Euck' }, authorized_tokens: ['tenant_a'] },
+        { id: 'hen-1', payload: { name: 'Chuck' }, auth: ['tenant_a'] },
+        { id: 'hen-2', payload: { name: 'Duck' }, auth: ['tenant_b'] },
+        { id: 'hen-3', payload: { name: 'Euck' }, auth: ['tenant_a'] },
     ];
 
     beforeAll(() => {
@@ -102,7 +98,7 @@ g, bob, tenant_b
         evaluations = [];
         roleLookups = 0;
 
-        casbinAuth = await CasbinAuth.create([modelPath, policyPath], subjectAuth);
+        casbinAuth = await CasbinAuth.create([modelPath, policyPath], subjectResolver);
 
         /**
          * Count, rather than forbid. A test that made `enforce` throw would say
@@ -138,7 +134,7 @@ g, bob, tenant_b
      *
      * Authorization in MeshQL is decided once, at the boundary, by resolving a
      * subject to a token set. Everything downstream intersects that set against
-     * a record's `authorized_tokens` locally. Re-asking the policy engine
+     * a record's mark locally. Re-asking the policy engine
      * further down does not make the answer safer - it is the same answer - and
      * it makes every layer pay for it, over the network if the engine is
      * remote.
@@ -148,16 +144,19 @@ g, bob, tenant_b
      * this number to make a build go green.
      */
     it('readPathMakesNoPolicyEvaluations', async () => {
-        const credentials = await casbinAuth.getAuthToken({});
+        const session: Session = await casbinAuth.authenticate({});
         const visible: string[] = [];
         for (const record of records) {
-            if (await casbinAuth.isAuthorized(credentials, record)) {
+            if (await session.isAuthorized('read', record)) {
                 visible.push(record.id as string);
             }
         }
 
         // The read has to have actually happened, or zero evaluations is vacuous.
-        expect(credentials).toEqual(['tenant_a']);
+        // The session's credentials are not readable from outside it, so they
+        // are asserted by what it says about a record marked with each tenant.
+        expect(await session.isAuthorized('read', { payload: {}, auth: ['tenant_a'] })).toBe(true);
+        expect(await session.isAuthorized('read', { payload: {}, auth: ['tenant_b'] })).toBe(false);
         expect(visible).toEqual(['hen-1', 'hen-3']);
         expect(roleLookups).toBeGreaterThan(0);
 
@@ -177,8 +176,8 @@ g, bob, tenant_b
      * either.
      */
     it('excludingARecordMakesNoPolicyEvaluations', async () => {
-        const credentials = await casbinAuth.getAuthToken({});
-        const refused = await casbinAuth.isAuthorized(credentials, records[1]);
+        const session = await casbinAuth.authenticate({});
+        const refused = await session.isAuthorized('read', records[1]);
 
         expect(refused).toBe(false);
         expect(
@@ -194,9 +193,9 @@ g, bob, tenant_b
      * Identity resolves once per request, not once per record.
      */
     it('identityIsResolvedOncePerRequestNotOncePerRecord', async () => {
-        const credentials = await casbinAuth.getAuthToken({});
+        const session = await casbinAuth.authenticate({});
         for (const record of records) {
-            await casbinAuth.isAuthorized(credentials, record);
+            await session.isAuthorized('read', record);
         }
 
         expect(

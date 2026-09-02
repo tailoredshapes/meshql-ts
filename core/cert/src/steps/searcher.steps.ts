@@ -2,13 +2,12 @@ import { Given, When, Then, DataTable } from '@cucumber/cucumber';
 import { IntegrationWorld, SearcherTestTemplates } from '../support/worlds';
 import assert from 'assert';
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
-import { Auth, NoOp } from '@tailoredshapes/meshql-auth';
+import { SystemSession } from '@tailoredshapes/meshql-auth';
 
 Given('a fresh repository and searcher instance', async function (this: IntegrationWorld) {
     this.repository = await this.plugin!.createRepository(this.config!);
     const dtoFactory = new DTOFactory([]);
-    let auth: Auth = new NoOp();
-    this.searcher = await this.plugin!.createSearcher(this.config!, dtoFactory, auth);
+    this.searcher = await this.plugin!.createSearcher(this.config!, dtoFactory);
 });
 
 Given(
@@ -23,7 +22,7 @@ Given(
             }
             return { payload };
         });
-        const saved = await this.repository!.createMany(envelopes, this.tokens);
+        const saved = await this.repository!.createMany(envelopes, SystemSession);
 
         saved.forEach((envelope) => {
             this.envelopes!.set(envelope.payload.name, envelope);
@@ -34,7 +33,7 @@ Given(
 Given('I have removed envelope {string}', async function (this: IntegrationWorld, name: string) {
     const envelope = this.envelopes!.get(name);
     if (!envelope?.id) throw new Error(`Envelope "${name}" not found`);
-    await this.repository!.remove(envelope.id, this.tokens);
+    await this.repository!.remove(envelope.id, SystemSession);
 });
 
 Given(
@@ -43,11 +42,14 @@ Given(
         const envelope = this.envelopes!.get(oldName);
         if (!envelope) throw new Error(`Envelope "${oldName}" not found`);
 
-        const updated = await this.repository!.create({
-            id: envelope.id,
-            authorized_tokens: envelope.authorized_tokens,
-            payload: { ...envelope.payload, name: newName, count },
-        });
+        const updated = await this.repository!.create(
+            {
+                id: envelope.id,
+                auth: envelope.auth,
+                payload: { ...envelope.payload, name: newName, count },
+            },
+            SystemSession,
+        );
 
         this.envelopes!.delete(oldName);
         this.envelopes!.set(newName, updated);
@@ -87,7 +89,7 @@ When(
     async function (this: IntegrationWorld, templateName: keyof SearcherTestTemplates, dataTable: DataTable) {
         const params = queryParams(this, templateName, dataTable);
 
-        this.searchResult = await this.searcher!.find(this.templates![templateName], params);
+        this.searchResult = await this.searcher!.find(this.templates![templateName], params, SystemSession);
     },
 );
 
@@ -96,7 +98,7 @@ When(
     async function (this: IntegrationWorld, templateName: keyof SearcherTestTemplates, dataTable: DataTable) {
         const params = queryParams(this, templateName, dataTable);
 
-        this.searchResults = await this.searcher!.findAll(this.templates![templateName], params);
+        this.searchResults = await this.searcher!.findAll(this.templates![templateName], params, SystemSession);
     },
 );
 
@@ -112,7 +114,7 @@ When(
         // same route every other parameter takes.
         const params = { ...queryParams(this, templateName, dataTable), limit };
 
-        this.searchResults = await this.searcher!.findAll(this.templates![templateName], params);
+        this.searchResults = await this.searcher!.findAll(this.templates![templateName], params, SystemSession);
     },
 );
 

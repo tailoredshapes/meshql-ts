@@ -3,14 +3,15 @@ import { Mock, It } from 'moq.ts';
 import { buildSchema, graphql } from 'graphql';
 import { context } from '../src/graph/root';
 import { RootConfig, Searcher } from '@tailoredshapes/meshql-common';
-import { Auth } from '@tailoredshapes/meshql-auth';
+import { Auth } from '@tailoredshapes/meshql-common';
 import fetchMock from 'fetch-mock';
 
 const auth = new Mock<Auth>()
-    .setup(async (i) => i.getAuthToken(It.IsAny()))
-    .returnsAsync(['TOKEN'])
-    .setup(async (i) => i.isAuthorized(It.IsAny(), It.IsAny()))
-    .returnsAsync(true)
+    .setup(async (i) => i.authenticate(It.IsAny()))
+    .returnsAsync({
+        stamp: async (envelope: any) => envelope,
+        isAuthorized: async () => true,
+    })
     .object();
 
 // TODO: These tests need fetch-mock setup investigation

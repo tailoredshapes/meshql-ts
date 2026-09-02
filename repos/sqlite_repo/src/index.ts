@@ -7,7 +7,6 @@ import { StorageConfig } from '@tailoredshapes/meshql-server';
 import { Repository } from '@tailoredshapes/meshql-common';
 import { SQLiteSearcher } from './sqliteSearcher';
 import { SQLiteRepository } from './sqliteRepo';
-import { Auth } from '@tailoredshapes/meshql-auth';
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
 import { Plugin } from '@tailoredshapes/meshql-server';
 
@@ -32,8 +31,8 @@ export class SQLitePlugin implements Plugin {
         return createSQLiteRepository(config as SQLConfig);
     }
 
-    async createSearcher(config: StorageConfig, dtoFactory: DTOFactory, auth: Auth) {
-        return createSQLiteSearcher(config as SQLConfig, dtoFactory, auth);
+    async createSearcher(config: StorageConfig, dtoFactory: DTOFactory) {
+        return createSQLiteSearcher(config as SQLConfig, dtoFactory);
     }
 
     async cleanup() {
@@ -42,11 +41,11 @@ export class SQLitePlugin implements Plugin {
 }
 
 /**
- * Creates a SQLiteSearcher with the given config, DTO factory, and auth.
+ * Creates a SQLiteSearcher with the given config and DTO factory.
  */
-export async function createSQLiteSearcher(sqlConfig: SQLConfig, dtoFactory: DTOFactory, auth: Auth) {
+export async function createSQLiteSearcher(sqlConfig: SQLConfig, dtoFactory: DTOFactory) {
     const db = await buildSqliteDb(sqlConfig);
-    return new SQLiteSearcher(db, sqlConfig.collection, dtoFactory, auth);
+    return new SQLiteSearcher(db, sqlConfig.collection, dtoFactory);
 }
 
 /**

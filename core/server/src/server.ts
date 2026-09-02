@@ -2,11 +2,10 @@ import express, { Application } from 'express';
 import { DTOFactory, root, init as graph_init } from '@tailoredshapes/meshql-graphlette';
 import { init as rest_init } from '@tailoredshapes/meshql-restlette';
 import { Config, Graphlette, Restlette, StorageConfig } from './configTypes';
-import { Repository, Searcher, Validator, getLogger } from '@tailoredshapes/meshql-common';
+import { Auth, Repository, Searcher, Validator, getLogger } from '@tailoredshapes/meshql-common';
 import { Crud } from '@tailoredshapes/meshql-restlette';
 import { JSONSchemaValidator } from '@tailoredshapes/meshql-restlette';
 import { JWTSubAuthorizer } from '@tailoredshapes/meshql-jwt_auth';
-import { Auth } from '@tailoredshapes/meshql-auth';
 import { CasbinAuth } from '@tailoredshapes/meshql-casbin_auth';
 import cors from 'cors';
 import { Plugin } from './plugin';
@@ -26,7 +25,7 @@ async function processGraphlette(
     let searcher: Searcher;
 
     if (plugins[storage.type]) {
-        searcher = await plugins[storage.type].createSearcher(storage, dtoFactory, auth);
+        searcher = await plugins[storage.type].createSearcher(storage, dtoFactory);
     } else {
         throw new Error(`Plugin for ${storage.type} not found`);
     }
@@ -52,21 +51,28 @@ async function processRestlette(
 ) {
     const validator: Validator = JSONSchemaValidator(restlette.schema);
     const repo: Repository = await buildRepository(restlette.storage, plugins);
-    const crud = new Crud(auth, repo, validator, restlette.path, restlette.tokens);
+    const crud = new Crud(auth, repo, validator, restlette.path);
     rest_init(app, crud, restlette.path, port, restlette.schema);
 }
 
 async function processAuth(config: Config): Promise<Auth> {
-    const jwtSubAuthorizer: Auth = new JWTSubAuthorizer();
     if (config.casbinParams) {
-        return CasbinAuth.create(config.casbinParams, jwtSubAuthorizer);
+        return CasbinAuth.create(config.casbinParams);
     } else {
-        return jwtSubAuthorizer;
+        return new JWTSubAuthorizer();
     }
 }
 
-export async function init(config: Config, plugins: Record<string, Plugin>): Promise<Application> {
-    const auth: Auth = await processAuth(config);
+/**
+ * @param auth the auth plugin to run with. Omitted, the config selects one:
+ *   casbin when `casbinParams` is present, the bare JWT token plugin
+ *   otherwise. Supplied, it is used as given -- which is how the
+ *   certification runs the same surfaces against a plugin that refuses
+ *   every read, or one that authorizes on a payload field and stores no
+ *   tokens at all.
+ */
+export async function init(config: Config, plugins: Record<string, Plugin>, auth?: Auth): Promise<Application> {
+    const authorizer: Auth = auth ?? (await processAuth(config));
 
     const app: Application = express();
     app.use(express.json());
@@ -94,12 +100,12 @@ export async function init(config: Config, plugins: Record<string, Plugin>): Pro
 
     // Process graphlettes
     for (const graphlette of config.graphlettes) {
-        await processGraphlette(graphlette, auth, app, plugins);
+        await processGraphlette(graphlette, authorizer, app, plugins);
     }
 
     // Process restlettes
     for (const restlette of config.restlettes) {
-        await processRestlette(restlette, auth, app, config.port, plugins);
+        await processRestlette(restlette, authorizer, app, config.port, plugins);
     }
 
     return app;

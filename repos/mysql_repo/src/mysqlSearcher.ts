@@ -1,5 +1,4 @@
-import { applyLimit, Searcher } from '@tailoredshapes/meshql-common';
-import { Auth } from '@tailoredshapes/meshql-auth';
+import { applyLimit, authorized, Searcher, Session } from '@tailoredshapes/meshql-common';
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
 import Handlebars from 'handlebars';
 import { getLogger } from 'log4js';
@@ -11,7 +10,6 @@ const logger = getLogger('meshql-ts/mysqlsearcher');
 export class MySQLSearcher implements Searcher {
     private pool: Pool;
     private table: string;
-    private authorizer: Auth;
     private dtoFactory: DTOFactory;
 
     private singletonQuery = Handlebars.compile(`
@@ -29,7 +27,7 @@ export class MySQLSearcher implements Searcher {
                FIRST_VALUE(payload) OVER w AS payload,
                FIRST_VALUE(created_at) OVER w AS created_at,
                FIRST_VALUE(deleted) OVER w AS deleted,
-               FIRST_VALUE(authorized_tokens) OVER w AS authorized_tokens
+               FIRST_VALUE(auth) OVER w AS auth
         FROM {{_name}}
         WHERE {{{filters}}}
           AND created_at <= ?
@@ -38,11 +36,10 @@ export class MySQLSearcher implements Searcher {
         ORDER BY created_at DESC
     `);
 
-    constructor(pool: Pool, table: string, dtoFactory: DTOFactory, authorizer: Auth) {
+    constructor(pool: Pool, table: string, dtoFactory: DTOFactory) {
         this.pool = pool;
         this.table = table;
         this.dtoFactory = dtoFactory;
-        this.authorizer = authorizer;
     }
 
     /**
@@ -58,7 +55,7 @@ export class MySQLSearcher implements Searcher {
     async find(
         queryTemplate: Handlebars.TemplateDelegate,
         args: Record<string, any>,
-        creds: string[] = [],
+        session: Session,
         timestamp: number = Date.now(),
     ): Promise<Record<string, any>> {
         args._name = this.table;
@@ -70,13 +67,13 @@ export class MySQLSearcher implements Searcher {
             const [rows] = await this.pool.query<EnvelopeRow[]>(sql, [timestamp]);
 
             if (rows.length > 0) {
-                const row = rowToEnvelope(rows[0]);
+                const envelope = rowToEnvelope(rows[0]);
 
-                if (await this.authorizer.isAuthorized(creds, row)) {
+                if (await session.isAuthorized('read', envelope)) {
                     // rowToEnvelope already merges id into row.payload as a
                     // side effect; createdAt is the only thing missing here.
-                    row.payload.createdAt = row.created_at?.toISOString();
-                    return this.dtoFactory.fillOne(row.payload, timestamp);
+                    envelope.payload.createdAt = envelope.created_at?.toISOString();
+                    return this.dtoFactory.fillOne(envelope.payload, timestamp);
                 }
             }
         } catch (err) {
@@ -92,7 +89,7 @@ export class MySQLSearcher implements Searcher {
     async findAll(
         queryTemplate: Handlebars.TemplateDelegate,
         args: Record<string, any>,
-        creds: string[] = [],
+        session: Session,
         timestamp: number = Date.now(),
     ): Promise<Record<string, any>[]> {
         args._name = this.table;
@@ -103,12 +100,8 @@ export class MySQLSearcher implements Searcher {
         try {
             const [rows] = await this.pool.query<EnvelopeRow[]>(sql, [timestamp]);
 
-            // `isAuthorized` is async: filtering on it directly tests a Promise,
-            // which is always truthy, so every row survives regardless of
-            // credentials. Resolve first, then filter on the resolved booleans.
             const envelopes = rows.map(rowToEnvelope);
-            const decisions = await Promise.all(envelopes.map((e) => this.authorizer.isAuthorized(creds, e)));
-            const authorizedResults = envelopes.filter((_, i) => decisions[i]);
+            const authorizedResults = await authorized(session, 'read', envelopes);
 
             // `limit` arrives as an ordinary query argument. It truncates after the
             // authorization filter, so a record the caller cannot read never

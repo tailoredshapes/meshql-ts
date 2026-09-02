@@ -32,7 +32,6 @@ export class IntegrationWorld extends World {
     searchResults?: any[];
     removeResult?: boolean;
     removeResults?: Record<string, boolean>;
-    tokens?: string[];
 }
 
 export type FarmTestWorld = {
@@ -378,8 +377,6 @@ export class AuthzEnv {
             ],
             restlettes: [
                 {
-                    // Deliberately no static `tokens`: we want the per-request
-                    // credentials resolved by Auth to reach storage.
                     path: AuthzEnv.restPath,
                     storage,
                     schema: AUTHZ_JSON_SCHEMA,

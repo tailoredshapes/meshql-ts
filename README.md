@@ -89,7 +89,7 @@ sequenceDiagram
 - **Temporal Querying**: Query data at specific points in time using timestamps
 - **Authentication & Authorization**:
     - JWT-based authentication with subject extraction
-    - Fine-grained access control via authorized_tokens
+    - Fine-grained access control via the auth plugin's per-record mark
     - CASBIN support for role-based access control (RBAC)
 - **GraphQL Features**:
     - Automatic relationship resolution
@@ -130,7 +130,7 @@ graph LR
 #### 2. Authorization (MeshQL)
 **Responsibility:** MeshQL services perform **authorization decisions**
 - Extract claims from pre-validated JWT tokens (using `jwt.decode()`)
-- Check `authorized_tokens` in data envelopes
+- Ask the auth plugin's session about each envelope it reads
 - Enforce fine-grained access control per resource
 
 ### Common Security Questions
@@ -185,7 +185,7 @@ MeshQL operates on a **zero-trust internal network** model:
 
 1. **External Perimeter:** API Gateway validates all requests
 2. **Internal Services:** MeshQL services trust gateway-validated tokens but make independent authorization decisions
-3. **Data Layer:** Fine-grained access control via `authorized_tokens` on each resource
+3. **Data Layer:** Fine-grained access control via the plugin's opaque mark on each envelope
 
 ### Production Deployment Checklist
 
@@ -195,7 +195,7 @@ MeshQL operates on a **zero-trust internal network** model:
 - [ ] Use environment-specific configuration (don't commit secrets)
 - [ ] Enable audit logging for access decisions
 - [ ] Implement monitoring for authorization failures
-- [ ] Review `authorized_tokens` strategy for your data model
+- [ ] Review your auth plugin's marking strategy for your data model
 
 ## Configuration
 

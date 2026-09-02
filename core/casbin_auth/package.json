@@ -26,6 +26,7 @@
     "dependencies": {
         "@tailoredshapes/meshql-auth": "^0.2.0",
         "@tailoredshapes/meshql-common": "^0.2.0",
+        "@tailoredshapes/meshql-jwt_auth": "^0.2.0",
         "casbin": "^5.36.0"
     },
     "gitHead": "b6648bde930e8a322c8d1a966e152bc83fa0ad31"

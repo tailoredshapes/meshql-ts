@@ -1,4 +1,5 @@
 import { Given, When, Then, DataTable } from '@cucumber/cucumber';
+import { SystemSession } from '@tailoredshapes/meshql-auth';
 import { IntegrationWorld } from '../support/worlds';
 import assert from 'assert';
 
@@ -15,7 +16,7 @@ Given('I have created envelopes:', async function(this: IntegrationWorld, dataTa
     for (const row of rows) {
         const { name, ...rest } = row;
         const payload = name ? { name, ...rest } : rest;  // Keep name in payload
-        const envelope = await this.repository!.create({ payload });
+        const envelope = await this.repository!.create({ payload }, SystemSession);
         this.envelopes!.set(name || payload.name, envelope);
     }
 });
@@ -25,7 +26,7 @@ Given('I create envelopes:', async function(this: IntegrationWorld, dataTable: D
     for (const row of rows) {
         const { name, ...rest } = row;
         const payload = name ? { name, ...rest } : rest;  // Keep name in payload
-        const envelope = await this.repository!.create({ payload });
+        const envelope = await this.repository!.create({ payload }, SystemSession);
         this.envelopes!.set(name || payload.name, envelope);
     }
 });
@@ -38,7 +39,7 @@ When('I create many envelopes:', async function(this: IntegrationWorld, dataTabl
         return { payload };
     });
 
-    const created = await this.repository!.createMany(envelopes);
+    const created = await this.repository!.createMany(envelopes, SystemSession);
 
     for (const envelope of created) {
         this.envelopes!.set(envelope.payload.name, envelope);
@@ -54,11 +55,14 @@ When('I create a new version of envelope {string}:', async function(this: Integr
     const row = dataTable.hashes()[0];
     const payload = { ...row };
 
-    const newVersion = await this.repository!.create({
-        id: existingEnvelope.id,
-        authorized_tokens: existingEnvelope.authorized_tokens,
-        payload,
-    });
+    const newVersion = await this.repository!.create(
+        {
+            id: existingEnvelope.id,
+            auth: existingEnvelope.auth,
+            payload,
+        },
+        SystemSession,
+    );
 
     this.envelopes!.set(name, newVersion);
 });
@@ -72,17 +76,17 @@ When(/^I read envelopes (\[.*\]) by their IDs$/, async function(this: Integratio
     });
 
     if (ids.length === 1) {
-        this.searchResult = await this.repository!.read(ids[0]);
+        this.searchResult = await this.repository!.read(ids[0], SystemSession);
         this.searchResults = this.searchResult ? [this.searchResult] : [];
     } else {
-        this.searchResults = await this.repository!.readMany(ids);
+        this.searchResults = await this.repository!.readMany(ids, SystemSession);
     }
 });
 
 When('I remove envelope {string}', async function(this: IntegrationWorld, name: string) {
     const envelope = this.envelopes!.get(name);
     if (!envelope?.id) throw new Error(`Envelope "${name}" not found or has no ID`);
-    this.removeResult = await this.repository!.remove(envelope.id);
+    this.removeResult = await this.repository!.remove(envelope.id, SystemSession);
 });
 
 When(/^I remove envelopes (\[.*\]) by their IDs$/, async function(this: IntegrationWorld, namesJson: string) {
@@ -93,11 +97,11 @@ When(/^I remove envelopes (\[.*\]) by their IDs$/, async function(this: Integrat
         return envelope.id;
     });
 
-    this.removeResults = await this.repository!.removeMany(ids);
+    this.removeResults = await this.repository!.removeMany(ids, SystemSession);
 });
 
 When('I list all envelopes', async function(this: IntegrationWorld) {
-    this.searchResults = await this.repository!.list();
+    this.searchResults = await this.repository!.list(SystemSession);
 });
 
 Then('reading envelope {string} at timestamp {string} should return version {string}', async function(this: IntegrationWorld, name: string, timestampLabel: string, expectedVersion: string) {
@@ -107,7 +111,7 @@ Then('reading envelope {string} at timestamp {string} should return version {str
     const timestamp = this.timestamps!.get(timestampLabel);
     if (!timestamp) throw new Error(`Timestamp "${timestampLabel}" not found`);
 
-    const result = await this.repository!.read(envelope.id, [], new Date(timestamp));
+    const result = await this.repository!.read(envelope.id, SystemSession, new Date(timestamp));
     assert.strictEqual(result?.payload.version, expectedVersion);
 });
 
@@ -120,10 +124,10 @@ Then(/^reading envelopes (\[.*\]) by their IDs should return nothing$/, async fu
     });
 
     if (ids.length === 1) {
-        const result = await this.repository!.read(ids[0]);
+        const result = await this.repository!.read(ids[0], SystemSession);
         assert.ok(result === undefined);
     } else {
-        const results = await this.repository!.readMany(ids);
+        const results = await this.repository!.readMany(ids, SystemSession);
         assert.deepStrictEqual(results, []);
     }
 });
@@ -171,6 +175,6 @@ Then('the remove operation should return true', function(this: IntegrationWorld)
 });
 
 Then('listing all envelopes should show exactly {int} envelope(s)', async function(this: IntegrationWorld, count: number) {
-    const results = await this.repository!.list();
+    const results = await this.repository!.list(SystemSession);
     assert.strictEqual(results.length, count);
 });

@@ -5,7 +5,6 @@ import { createPool, PoolOptions, Pool as MySQLPool } from 'mysql2/promise';
 import { Repository } from '@tailoredshapes/meshql-common';
 import { MySQLRepository } from './mysqlRepo';
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
-import { Auth } from '@tailoredshapes/meshql-auth';
 import { MySQLSearcher } from './mysqlSearcher';
 import { StorageConfig } from '@tailoredshapes/meshql-server';
 import { Plugin } from '@tailoredshapes/meshql-server';
@@ -60,8 +59,8 @@ export class MySQLPlugin implements Plugin {
         return createMySQLRepository(config as MySQLConfig, this.pools);
     }
 
-    async createSearcher(config: StorageConfig, dtoFactory: DTOFactory, auth: Auth) {
-        return createMySQLSearcher(config as MySQLConfig, dtoFactory, auth, this.pools);
+    async createSearcher(config: StorageConfig, dtoFactory: DTOFactory) {
+        return createMySQLSearcher(config as MySQLConfig, dtoFactory, this.pools);
     }
 
     async cleanup() {
@@ -87,9 +86,8 @@ export async function createMySQLRepository(
 export function createMySQLSearcher(
     mysqlConfig: MySQLConfig,
     dtoFactory: DTOFactory,
-    auth: Auth,
     pools: Record<string, MySQLPool>,
 ): MySQLSearcher {
     const pool = buildMySQLPool(mysqlConfig, pools);
-    return new MySQLSearcher(pool, mysqlConfig.table, dtoFactory, auth);
+    return new MySQLSearcher(pool, mysqlConfig.table, dtoFactory);
 }

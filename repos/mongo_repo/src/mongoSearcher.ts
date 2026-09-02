@@ -1,5 +1,4 @@
-import { applyLimit, Envelope, Searcher } from '@tailoredshapes/meshql-common';
-import { Auth } from '@tailoredshapes/meshql-auth';
+import { applyLimit, authorized, Envelope, Searcher, Session } from '@tailoredshapes/meshql-common';
 import { Collection, Document } from 'mongodb';
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
 import HandleBars from 'handlebars';
@@ -11,20 +10,12 @@ import { MongoClient } from 'mongodb';
 let logger = getLogger('meshql-ts/mongosearcher');
 
 export class MongoSearcher implements Searcher {
-    private authorizer: Auth;
     private db: Collection<Envelope>;
     private dtoFactory: DTOFactory;
     private dbClient: MongoClient;
     private collection: string;
 
-    constructor(
-        db: Collection<Envelope>,
-        dtoFactory: DTOFactory,
-        authorizer: Auth,
-        dbClient: MongoClient,
-        collection: string,
-    ) {
-        this.authorizer = authorizer;
+    constructor(db: Collection<Envelope>, dtoFactory: DTOFactory, dbClient: MongoClient, collection: string) {
         this.db = db;
         this.dtoFactory = dtoFactory;
         this.dbClient = dbClient;
@@ -53,7 +44,7 @@ export class MongoSearcher implements Searcher {
     async find(
         queryTemplate: Handlebars.TemplateDelegate,
         args: Record<string, any>,
-        creds: string[] = [],
+        session: Session,
         timestamp: number = Date.now(),
     ): Promise<Record<string, any>> {
         let query = this.processQueryTemplate(args, queryTemplate);
@@ -84,11 +75,7 @@ export class MongoSearcher implements Searcher {
         if (doc.length > 0) {
             let result = doc[0];
 
-            // No short-circuit on empty credentials: an uncredentialed caller
-            // is permitted, but only to the records whose own token list is
-            // empty. `isAuthorized` already encodes that rule, and the SQL
-            // adapters go through it unconditionally.
-            if (await this.authorizer.isAuthorized(creds, result)) {
+            if (await session.isAuthorized('read', result)) {
                 result.payload.id = result.id;
                 result.payload.createdAt = result.created_at?.toISOString();
                 return this.dtoFactory.fillOne(result.payload, timestamp);
@@ -103,7 +90,7 @@ export class MongoSearcher implements Searcher {
     async findAll(
         queryTemplate: Handlebars.TemplateDelegate,
         args: Record<string, any>,
-        creds: string[] = [],
+        session: Session,
         timestamp: number = Date.now(),
     ): Promise<Record<string, any>[]> {
         let time_filter = {
@@ -137,22 +124,14 @@ export class MongoSearcher implements Searcher {
             ])
             .toArray();
 
-        // `isAuthorized` is async: filtering on it directly tests a Promise,
-        // which is always truthy, so every document survives regardless of
-        // credentials. Resolve first, then filter on the resolved booleans.
-        // Applied unconditionally -- an uncredentialed caller still only
-        // reaches records whose own token list is empty.
-        const decisions = await Promise.all(
-            results.map((r: Document) => this.authorizer.isAuthorized(creds, r as Envelope)),
-        );
-        results = results.filter((_: Document, i: number) => decisions[i]);
+        const authorizedResults = await authorized(session, 'read', results as Envelope[]);
 
         // `limit` arrives as an ordinary query argument. It truncates after the
         // authorization filter, so a record the caller cannot read never
         // consumes a slot and hides one the caller can.
-        const limited = applyLimit(results, args.limit);
+        const limited = applyLimit(authorizedResults, args.limit);
 
-        return limited.map((d) => {
+        return limited.map((d: Document) => {
             let r = d as Schema;
             r.payload.id = r.id;
             r.payload.createdAt = r.created_at?.toISOString();

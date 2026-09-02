@@ -16,8 +16,13 @@ export const GraphletteSchema = z.object({
 
 export type Graphlette = z.infer<typeof GraphletteSchema>;
 
+/**
+ * A restlette no longer carries a static `tokens` list. Deciding what mark a
+ * new version is written with is `Session.stamp`, and the auth plugin owns it;
+ * a config key that overrode the plugin's answer was an authorization decision
+ * taken in the server's configuration file.
+ */
 export const RestletteSchema = z.object({
-    tokens: z.array(z.string()).optional(),
     path: z.string(),
     storage: StorageConfigSchema,
     schema: z.record(z.any()),

@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import Log4js from 'log4js';
 import { init } from '../src'; // Assuming this initializes an Express app
-import { Auth, NoOp } from '@tailoredshapes/meshql-auth';
+import { NoAuth, SystemSession } from '@tailoredshapes/meshql-auth';
+import { Auth, Session } from '@tailoredshapes/meshql-common';
 import { InMemory } from '../../common/test/memory_repo';
 import { Envelope, Repository, Validator } from '@tailoredshapes/meshql-common';
 import { Crud } from '../src/crud';
@@ -61,9 +62,10 @@ describe('Crud', () => {
         });
 
         beforeAll(async () => {
-            const auth: Auth = new NoOp();
+            const auth: Auth = new NoAuth();
             const repo: Repository = new InMemory();
-            saved = await repo.create({ payload: { name: 'chuck', eggs: 6 } });
+            // Seeding storage happens outside any request, so it says so.
+            saved = await repo.create({ payload: { name: 'chuck', eggs: 6 } }, SystemSession);
 
             app = express();
             app.use(express.json());
@@ -146,9 +148,9 @@ describe('Crud', () => {
         });
 
         beforeAll(async () => {
-            const auth: Auth = new NoOp();
+            const auth: Auth = new NoAuth();
             const repo: Repository = new InMemory();
-            await repo.create({ id: '666', payload: { name: 'chuck', eggs: 6 } });
+            await repo.create({ id: '666', payload: { name: 'chuck', eggs: 6 } }, SystemSession);
 
             app = express();
             app.use(express.json());
@@ -205,17 +207,25 @@ describe('Crud', () => {
         });
 
         beforeAll(async () => {
+            // A plugin whose whole rule is "the credential must be the string
+            // `token`". The restlette cannot second-guess it: all it can do is
+            // ask, which is what the two cases below check.
             const auth: Auth = {
-                async getAuthToken(context: Record<string, any>): Promise<string[]> {
-                    return [context.headers?.authorization ?? 'fd'];
-                },
-                async isAuthorized(credentials: string[], data: Record<string, any>): Promise<boolean> {
-                    return credentials[0] === 'token';
+                async authenticate(context: Record<string, any>): Promise<Session> {
+                    const credential = context.headers?.authorization ?? 'fd';
+                    return {
+                        async stamp(envelope) {
+                            return envelope;
+                        },
+                        async isAuthorized() {
+                            return credential === 'token';
+                        },
+                    };
                 },
             };
 
             const repo: Repository = new InMemory();
-            hen = await repo.create({ id: '666', payload: { name: 'chuck', eggs: 6 } });
+            hen = await repo.create({ id: '666', payload: { name: 'chuck', eggs: 6 } }, SystemSession);
 
             app = express();
             app.use(express.json());

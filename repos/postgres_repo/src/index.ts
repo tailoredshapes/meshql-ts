@@ -7,7 +7,6 @@ import { PostgresSearcher } from './postgresSearcher';
 import { PostgresRepository } from './postgresRepo';
 
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
-import { Auth } from '@tailoredshapes/meshql-auth';
 import { Repository } from '@tailoredshapes/meshql-common';
 import { Plugin } from '@tailoredshapes/meshql-server';
 /**
@@ -49,8 +48,8 @@ export class PostgresPlugin implements Plugin {
         return createPostgresRepository(config as PostgresConfig, this.pools);
     }
 
-    async createSearcher(config: StorageConfig, dtoFactory: DTOFactory, auth: Auth) {
-        return createPostgresSearcher(config as PostgresConfig, dtoFactory, auth, this.pools);
+    async createSearcher(config: StorageConfig, dtoFactory: DTOFactory) {
+        return createPostgresSearcher(config as PostgresConfig, dtoFactory, this.pools);
     }
 
     async cleanup() {
@@ -60,16 +59,15 @@ export class PostgresPlugin implements Plugin {
     }
 }
 /**
- * Creates a PostgresSearcher with the given config, DTOFactory, and auth.
+ * Creates a PostgresSearcher with the given config and DTOFactory.
  */
 export function createPostgresSearcher(
     pgConfig: PostgresConfig,
     dtoFactory: DTOFactory,
-    auth: Auth,
     pools: Record<string, Pool>,
 ): PostgresSearcher {
     const pool = buildPostgresPool(pgConfig, pools);
-    return new PostgresSearcher(pool, pgConfig.table, dtoFactory, auth);
+    return new PostgresSearcher(pool, pgConfig.table, dtoFactory);
 }
 
 /**

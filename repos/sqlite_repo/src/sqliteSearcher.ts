@@ -1,5 +1,4 @@
-import { applyLimit, Searcher, Envelope } from '@tailoredshapes/meshql-common';
-import { Auth } from '@tailoredshapes/meshql-auth';
+import { applyLimit, authorized, Envelope, Searcher, Session } from '@tailoredshapes/meshql-common';
 import { DTOFactory } from '@tailoredshapes/meshql-graphlette';
 import Handlebars from 'handlebars';
 import { Database } from 'sqlite';
@@ -7,7 +6,6 @@ import { Database } from 'sqlite';
 export class SQLiteSearcher implements Searcher {
     private db: Database;
     private table: string;
-    private authorizer: Auth;
     private dtoFactory: DTOFactory;
 
     // `deleted = 0` matches the vector template below, and the Postgres and
@@ -43,21 +41,30 @@ export class SQLiteSearcher implements Searcher {
         WHERE t1.deleted = 0`,
     );
 
-    constructor(db: Database, table: string, dtoFactory: DTOFactory, authorizer: Auth) {
+    constructor(db: Database, table: string, dtoFactory: DTOFactory) {
         this.db = db;
         this.table = table;
         this.dtoFactory = dtoFactory;
-        this.authorizer = authorizer;
     }
 
     processQueryTemplate(parameters: Record<string, any>, queryTemplate: Handlebars.TemplateDelegate): string {
         return queryTemplate(parameters);
     }
 
+    private rowToEnvelope(row: any): Envelope {
+        return {
+            id: row.id,
+            payload: JSON.parse(row.payload),
+            created_at: new Date(row.created_at),
+            deleted: !!row.deleted,
+            auth: row.auth === null || row.auth === undefined ? undefined : JSON.parse(row.auth),
+        };
+    }
+
     async find(
         queryTemplate: Handlebars.TemplateDelegate,
         args: Record<string, any>,
-        creds: string[] = [],
+        session: Session,
         timestamp: number = Date.now(),
     ): Promise<Record<string, any>> {
         args._created_at = timestamp;
@@ -68,13 +75,12 @@ export class SQLiteSearcher implements Searcher {
         const result = await this.db.get(sql, []);
 
         if (result && result.payload) {
-            result.payload = JSON.parse(result.payload);
-            result.authorized_tokens = JSON.parse(result.authorized_tokens);
+            const envelope = this.rowToEnvelope(result);
 
-            if (await this.authorizer.isAuthorized(creds, result)) {
-                result.payload.id = result.id;
-                result.payload.createdAt = new Date(result.created_at).toISOString();
-                return this.dtoFactory.fillOne(result.payload, timestamp);
+            if (await session.isAuthorized('read', envelope)) {
+                envelope.payload.id = envelope.id;
+                envelope.payload.createdAt = envelope.created_at!.toISOString();
+                return this.dtoFactory.fillOne(envelope.payload, timestamp);
             }
         }
 
@@ -84,7 +90,7 @@ export class SQLiteSearcher implements Searcher {
     async findAll(
         queryTemplate: Handlebars.TemplateDelegate,
         args: Record<string, any>,
-        creds: string[] = [],
+        session: Session,
         timestamp: number = Date.now(),
     ): Promise<Record<string, any>[]> {
         args._created_at = timestamp;
@@ -93,28 +99,19 @@ export class SQLiteSearcher implements Searcher {
         let sql = this.processQueryTemplate(args, this.vectorTemplate);
 
         const rows = await this.db.all(sql, []);
-        const envelopes: Envelope[] = rows.map((i) => {
-            i.payload = JSON.parse(i.payload);
-            i.authorized_tokens = JSON.parse(i.authorized_tokens);
-            return i;
-        });
+        const envelopes: Envelope[] = rows.map((row) => this.rowToEnvelope(row));
 
-        // `isAuthorized` is async: filtering on it directly tests a Promise,
-        // which is always truthy, so every envelope survives regardless of
-        // credentials. Resolve first, then filter on the resolved booleans.
-        const decisions = await Promise.all(envelopes.map((row) => this.authorizer.isAuthorized(creds, row)));
-        const authorizedResults = envelopes.filter((_, i) => decisions[i]);
+        const authorizedResults = await authorized(session, 'read', envelopes);
 
         // `limit` arrives as an ordinary query argument. It truncates after the
         // authorization filter, so a record the caller cannot read never
         // consumes a slot and hides one the caller can.
         const limited = applyLimit(authorizedResults, args.limit);
 
-        return limited.map((row) => {
-            const result = row as Envelope;
-            result.payload.id = result.id;
-            result.payload.createdAt = new Date(result.created_at as unknown as number).toISOString();
-            return result.payload;
+        return limited.map((envelope) => {
+            envelope.payload.id = envelope.id;
+            envelope.payload.createdAt = envelope.created_at!.toISOString();
+            return envelope.payload;
         });
     }
 

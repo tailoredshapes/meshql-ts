@@ -1,4 +1,5 @@
-import { Envelope, Repository } from '@tailoredshapes/meshql-common';
+import { Auth, Envelope, Repository } from '@tailoredshapes/meshql-common';
+import { SystemSession } from '@tailoredshapes/meshql-auth';
 import { init, Plugin, StorageConfig, Config as MeshQLConfig } from '@tailoredshapes/meshql-server';
 import { Server } from 'node:http';
 import path from 'path';
@@ -9,15 +10,16 @@ import { AuthzCaller, AuthzEnv } from './worlds';
  * The shared authorization contract
  * ---------------------------------------------------------------------------
  *
- * `features/contract/features/authz.feature` comes from the `meshql-contract`
- * submodule and runs unchanged in TypeScript, Java, and Rust. It speaks of
- * widgets, kinds, and callers, and it asserts what each caller can see —
- * never what status code a refusal carries, because the status is the server's
- * business and the visibility is the contract's.
+ * `features/contract/features/authz.feature` and
+ * `features/contract/features/auth_plugin.feature` come from the
+ * `meshql-contract` submodule and run unchanged in TypeScript, Java, and Rust.
+ * They speak of widgets, kinds, and callers, and they assert what each caller
+ * can see -- never what status code a refusal carries, because the status is
+ * the server's business and the visibility is the contract's.
  *
  * The environment below is the widget-shaped twin of `AuthzEnv`. It shares the
- * credential machinery — the same casbin policy, the same unsigned bearer
- * tokens, the same caller-to-credential table — and differs only in the
+ * credential machinery -- the same casbin policy, the same unsigned bearer
+ * tokens, the same caller-to-credential table -- and differs only in the
  * document it stores and the queries it exposes.
  *
  * ## Why a service per scenario
@@ -26,6 +28,13 @@ import { AuthzCaller, AuthzEnv } from './worlds';
  * mean all, so a scenario cannot inherit rows another scenario wrote. Each
  * scenario therefore stands up its own service over its own empty collection,
  * which is what the Background step does.
+ *
+ * ## Why a service can be handed an auth plugin
+ *
+ * `auth_plugin.feature` runs these same surfaces against plugins no adapter
+ * can second-guess: one that refuses every read, one that authorizes on a
+ * payload field and stores no tokens at all. Selecting the plugin is the only
+ * difference between those scenarios and the token-plugin ones.
  */
 
 export interface WidgetQueries {
@@ -85,15 +94,23 @@ export class WidgetService {
 
     private readonly storage: StorageConfig;
     private readonly plugins: Record<string, Plugin>;
+    private readonly auth?: Auth;
     private server?: Server;
     private repo?: Repository;
 
     /** Widget name to envelope id. Names are unique within a scenario. */
     private readonly ids: Record<string, string> = {};
 
-    constructor(storage: StorageConfig, queries: WidgetQueries, port: number, plugins: Record<string, Plugin>) {
+    constructor(
+        storage: StorageConfig,
+        queries: WidgetQueries,
+        port: number,
+        plugins: Record<string, Plugin>,
+        auth?: Auth,
+    ) {
         this.storage = storage;
         this.plugins = plugins;
+        this.auth = auth;
         this.baseUrl = `http://localhost:${port}`;
 
         const casbinDir = path.resolve(__dirname, '..', '..', 'config', 'casbin');
@@ -115,9 +132,6 @@ export class WidgetService {
             ],
             restlettes: [
                 {
-                    // Deliberately no static `tokens`: the contract asserts that
-                    // the credentials Auth resolved per request are the ones that
-                    // reach storage, and a static list would hide that.
                     path: WidgetService.restPath,
                     storage,
                     schema: WIDGET_JSON_SCHEMA,
@@ -127,7 +141,7 @@ export class WidgetService {
     }
 
     async start(): Promise<void> {
-        const app = await init(this.conf, this.plugins);
+        const app = await init(this.conf, this.plugins, this.auth);
         // Resolve only once the socket is accepting, so a bind failure surfaces
         // here instead of as an opaque "fetch failed" three steps later.
         this.server = await new Promise<Server>((resolve, reject) => {
@@ -210,7 +224,7 @@ export class WidgetService {
 
     /**
      * List through the restlette, which is the only surface over
-     * `Repository.list` — the one read path that takes no predicate at all.
+     * `Repository.list` -- the one read path that takes no predicate at all.
      */
     async list(caller: AuthzCaller): Promise<string[]> {
         const response = await fetch(`${this.baseUrl}${WidgetService.restPath}`, {
@@ -253,10 +267,17 @@ export class WidgetService {
         return data.getByKind ?? [];
     }
 
-    /** The envelope as storage holds it, tokens and all. */
+    /**
+     * The envelope as storage holds it, mark and all.
+     *
+     * Read with the system session: this is the certification reaching past
+     * the API to see what was persisted, which is work outside any request,
+     * and work outside a request says so explicitly rather than passing
+     * nothing.
+     */
     async storedEnvelope(name: string): Promise<Envelope | undefined> {
         const repo = await this.repository();
-        return repo.read(this.idFor(name));
+        return repo.read(this.idFor(name), SystemSession);
     }
 }
 
@@ -274,9 +295,19 @@ export class WidgetHarness {
         private readonly basePort: number,
     ) {}
 
-    async start(): Promise<WidgetService> {
+    /**
+     * @param auth the auth plugin this scenario runs against. Omitted, the
+     *   service's own config picks one, which is the token plugin.
+     */
+    async start(auth?: Auth): Promise<WidgetService> {
         const index = this.next++;
-        const service = new WidgetService(this.storageFor(index), this.queries, this.basePort + index, this.plugins);
+        const service = new WidgetService(
+            this.storageFor(index),
+            this.queries,
+            this.basePort + index,
+            this.plugins,
+            auth,
+        );
         await service.start();
         return service;
     }

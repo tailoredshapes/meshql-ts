@@ -56,7 +56,7 @@ Rules:
 }
 ```
 
-This validates the REST write payload via AJV (`core/restlette/src/validation.ts`, with `ajv-formats` for `format: "uuid"` etc). It describes the **payload** only — never include `created_at`, `deleted`, or `authorized_tokens`; those are Envelope metadata managed by the framework. `id` can appear (the real examples include it) since a client may supply its own UUID on create, but it's optional. `additionalProperties: false` is the convention in every shipped example — keep it unless you have a reason to allow extra fields. A property may also carry a `"faker": "..."` keyword (e.g. `"faker": "person.firstName"`) — AJV is told to ignore it (`ajv.addKeyword('faker')`) and it's read separately by test-data generators; it's not required.
+This validates the REST write payload via AJV (`core/restlette/src/validation.ts`, with `ajv-formats` for `format: "uuid"` etc). It describes the **payload** only — never include `created_at`, `deleted`, or `auth`; those are Envelope metadata managed by the framework. `id` can appear (the real examples include it) since a client may supply its own UUID on create, but it's optional. `additionalProperties: false` is the convention in every shipped example — keep it unless you have a reason to allow extra fields. A property may also carry a `"faker": "..."` keyword (e.g. `"faker": "person.firstName"`) — AJV is told to ignore it (`ajv.addKeyword('faker')`) and it's read separately by test-data generators; it's not required.
 
 ## 3. Wire it into `config.conf` (HOCON)
 
@@ -120,7 +120,7 @@ Notes:
 - `POST/GET/PUT/DELETE /widget/api[/:id]`, plus `GET /widget/api/bulk` and `POST /widget/api/bulk`, with schema validation, soft delete, versioning, and Swagger docs at `/widget/api/api-docs` (`core/restlette`).
 - `POST /widget/graph` GraphQL with temporal reads and federation (`core/graphlette`).
 - `GET /widget/api/health` and `/widget/api/ready` liveness/readiness endpoints, plus aggregate `/health` and `/ready` at the app root (`core/server/src/health.ts`).
-- Authorization filtering on every read, via the `Auth` passed through `init()`.
+- Authorization on every read: the `Auth` passed through `init()` resolves a `Session` per request, and storage asks it about each envelope.
 - `X-Meshql-Created-At`/`X-Meshql-Deleted` response headers on REST `create`/`read`/`update` — the "honesty" as-of fields, automatic, no config needed.
 
 ## 5. Write-time extension hooks — and the gap where Rust/Java have more

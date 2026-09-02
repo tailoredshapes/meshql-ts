@@ -1,100 +1,32 @@
-# MeshQL: Domain-Driven Service Mesh
+# meshobj
 
-MeshQL is a service mesh that auto-generates REST and GraphQL endpoints based on a structured domain model. It supports multiple storage backends and integrates with event-driven architectures.
+The TypeScript implementation of **[meshql](https://git.tildarc.com/tailoredshapes/meshql)** — and the original one.
 
-## Component Overview
+What meshql *is* — the model, the envelope, temporal reads, honesty, how
+authorization works, and the Gherkin contract every storage plugin is certified
+against — is defined once in the [contract repository][contract], which this
+repository runs as a git submodule at `core/cert/features/contract`. Read that
+first. This README is the *how*: what is specific to running meshql on Node, and
+the security model this deployment assumes.
 
-```mermaid
-graph TD;
-    subgraph Client
-        Web
-        Mobile
-        Service
-    end
+[contract]: https://git.tildarc.com/tailoredshapes/meshql
 
-    subgraph PAAS
-    subgraph Farm
-    RestletteA[RestletteA: Farm API]
-    GraphletteA[GraphletteA: Farm Graph]
-    end
-    subgraph Coop
-    RestletteB[RestletteB: Coop API]
-    GraphletteB[GraphletteB: Coop Graph]
-    end
-    subgraph Hen
-    RestletteC[RestletteC: Hen API]
-    GraphletteC[GraphletteC: Hen Graph]
-    end
-    end
+## What is specific to TypeScript
 
-    subgraph Datastore
-    Postgres[PostgreSQL]
-    Mongo[MongoDB]
-    SQLite[SQLite]
-    MySQL[MySQL]
-    end
+- **The original implementation.** Where the three disagree about intent, this
+  is usually where the behaviour started — the honesty fields were certified
+  here first.
+- **Node 20.** The workspace pins `>=20 <21`; later majors break the toolchain's
+  yargs entry point.
+- **Yarn workspaces driven by Lerna**, one package per component and per storage
+  plugin.
+- **Storage plugins**: MongoDB, PostgreSQL, MySQL, and SQLite.
 
-    RestletteA & RestletteB & RestletteC -->|Reads/Writes| Datastore
-    Client -->|Requests| Farm & Coop & Hen
-```
+### Where this implementation diverges
 
-## Core Packages
-
-MeshQL is composed of several key packages, each serving a specific purpose:
-
-### Main Packages
-
-- [@meshql-ts/cli](packages/cli/README.md) - Command-line interface for running and configuring MeshQL servers
-- [@meshql-ts/server](packages/server/README.md) - Core server implementation with GraphQL and REST support
-- [@meshql-ts/merminator](packages/merminator/README.md) - Configuration generator from Mermaid diagrams
-
-### Database Plugins
-
-- [@meshql-ts/mongo_repo](packages/mongo_repo/README.md) - MongoDB integration
-- [@meshql-ts/postgres_repo](packages/postgres_repo/README.md) - PostgreSQL integration
-- [@meshql-ts/mysql_repo](packages/mysql_repo/README.md) - MySQL integration
-- [@meshql-ts/sqlite_repo](packages/sqlite_repo/README.md) - SQLite integration
-
-### API Components
-
-- [@meshql-ts/graphlette](packages/graphlette/README.md) - GraphQL endpoint generator and resolver
-- [@meshql-ts/restlette](packages/restlette/README.md) - REST API endpoint generator
-
-### Authentication & Authorization
-
-- [@meshql-ts/jwt_auth](packages/jwt_auth/README.md) - JWT-based authentication
-- [@meshql-ts/casbin_auth](packages/casbin_auth/README.md) - CASBIN-based authorization
-
-## Basic Operation Flow
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant RestletteA
-    participant Datastore
-
-    Client->>+RestletteA: JSON CRUD Request
-    RestletteA->>+Datastore: SQL Query
-    Datastore-->>-RestletteA: Query Response
-    RestletteA-->>-Client: JSON Response
-```
-
-## Core Features
-
-- **Multiple Storage Backends**:
-    - MongoDB: Document-based storage with native JSON support
-    - PostgreSQL: ACID-compliant relational database with JSON capabilities
-    - MySQL: High-performance relational database with JSON support
-    - SQLite: Lightweight embedded database for development/testing
-- **Temporal Querying**: Query data at specific points in time using timestamps
-- **Authentication & Authorization**:
-    - JWT-based authentication with subject extraction
-    - Fine-grained access control via the auth plugin's per-record mark
-    - CASBIN support for role-based access control (RBAC)
-- **GraphQL Features**:
-    - Automatic relationship resolution
-    - Temporal queries via timestamp arguments
-    - Subgraph federation
+- **No `/<id>/versions` endpoint.** Rust exposes the version history of a
+  document over REST; TypeScript does not yet. Nothing in the contract certifies
+  it, which is why the gap went unnoticed.
 
 ## Security Architecture
 

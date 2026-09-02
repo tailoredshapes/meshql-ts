@@ -11,23 +11,29 @@ export class PostgresSearcher implements Searcher {
     private table: string;
     private dtoFactory: DTOFactory;
 
+    // A delete appends a tombstone rather than flagging the versions before it,
+    // so the deletion test belongs on the row a query settles on and not in the
+    // filter that chooses it. Filter first, then reject what the newest matching
+    // version says is gone: keep `deleted = false` inside the search and a
+    // tombstoned record stays readable through the version underneath it.
     private singletonQuery = Handlebars.compile(`
         SELECT *
         FROM {{_name}}
         WHERE {{{filters}}}
           AND created_at <= '{{_createdAt}}'
-          AND deleted = false
         ORDER BY created_at DESC
         LIMIT 1
         `);
 
     private vectorQuery = Handlebars.compile(`
-        SELECT DISTINCT ON (id) *
-        FROM {{_name}}
-        WHERE {{{filters}}}
-          AND created_at <= '{{_createdAt}}'
-          AND deleted = false
-        ORDER BY id, created_at DESC
+        SELECT * FROM (
+            SELECT DISTINCT ON (id) *
+            FROM {{_name}}
+            WHERE {{{filters}}}
+              AND created_at <= '{{_createdAt}}'
+            ORDER BY id, created_at DESC
+        ) latest
+        WHERE deleted = false
         `);
 
     constructor(pool: Pool, table: string, dtoFactory: DTOFactory) {
@@ -73,6 +79,7 @@ export class PostgresSearcher implements Searcher {
 
             if (result.rows.length > 0) {
                 const envelope = PostgresSearcher.toEnvelope(result.rows[0]);
+                if (envelope.deleted) return {};
 
                 if (await session.isAuthorized('read', envelope)) {
                     envelope.payload.id = envelope.id;

@@ -74,6 +74,20 @@ const WIDGET_JSON_SCHEMA = {
     },
 };
 
+/**
+ * One entry in a version listing, as the REST surface reports it.
+ *
+ * A version the caller may not read carries `unauthorized` and no `url` at all
+ * -- absent, not null -- because omitting the entry would make the history look
+ * continuous when it is not.
+ */
+export type VersionEntry = {
+    url?: string;
+    created_at: string;
+    deleted: boolean;
+    unauthorized?: boolean;
+};
+
 /** A widget as the contract sees it: a name and a kind, and nothing else. */
 export type WidgetView = {
     id?: string | null;
@@ -90,7 +104,9 @@ export class WidgetService {
     static readonly graphPath = '/widget/graph';
 
     readonly conf: MeshQLConfig;
-    readonly baseUrl: string;
+
+    /** Known once the socket is accepting, because the port is not chosen here. */
+    baseUrl = '';
 
     private readonly storage: StorageConfig;
     private readonly plugins: Record<string, Plugin>;
@@ -101,22 +117,19 @@ export class WidgetService {
     /** Widget name to envelope id. Names are unique within a scenario. */
     private readonly ids: Record<string, string> = {};
 
-    constructor(
-        storage: StorageConfig,
-        queries: WidgetQueries,
-        port: number,
-        plugins: Record<string, Plugin>,
-        auth?: Auth,
-    ) {
+    constructor(storage: StorageConfig, queries: WidgetQueries, plugins: Record<string, Plugin>, auth?: Auth) {
         this.storage = storage;
         this.plugins = plugins;
         this.auth = auth;
-        this.baseUrl = `http://localhost:${port}`;
 
         const casbinDir = path.resolve(__dirname, '..', '..', 'config', 'casbin');
 
         this.conf = {
-            port,
+            // Port 0 asks the operating system for a free one. The contract
+            // claims a port per scenario, and a fixed range walks into whatever
+            // else the host happens to be running -- which is a failing
+            // certification that says nothing about the code under test.
+            port: 0,
             casbinParams: [path.join(casbinDir, 'model.conf'), path.join(casbinDir, 'policy.csv')],
             graphlettes: [
                 {
@@ -149,6 +162,11 @@ export class WidgetService {
             server.once('listening', () => resolve(server));
             server.once('error', reject);
         });
+        const address = this.server.address();
+        if (address === null || typeof address === 'string') {
+            throw new Error('the widget service is not listening on a TCP port');
+        }
+        this.baseUrl = `http://localhost:${address.port}`;
     }
 
     async stop(): Promise<void> {
@@ -211,6 +229,62 @@ export class WidgetService {
         const id = location.substring(location.lastIndexOf('/') + 1);
         this.ids[name] = id;
         return id;
+    }
+
+    /** Replace a widget through the restlette, exactly as a real client would. */
+    async update(caller: AuthzCaller, name: string, kind: string): Promise<void> {
+        const response = await fetch(`${this.baseUrl}${WidgetService.restPath}/${this.idFor(name)}`, {
+            method: 'PUT',
+            headers: this.headers(caller),
+            body: JSON.stringify({ name, kind }),
+            redirect: 'manual',
+        });
+
+        if (response.status < 200 || response.status >= 400) {
+            throw new Error(`Update failed for ${caller}: ${response.status} ${await response.text()}`);
+        }
+    }
+
+    /**
+     * `GET /widget/api/<id>/versions` as `caller`.
+     *
+     * Over the wire, like every other step: what is certified is the REST
+     * surface a caller actually gets, not the Repository underneath it.
+     */
+    async listVersions(caller: AuthzCaller, name: string): Promise<VersionEntry[]> {
+        const id = this.idFor(name);
+        const response = await fetch(`${this.baseUrl}${WidgetService.restPath}/${id}/versions`, {
+            method: 'GET',
+            headers: this.headers(caller),
+        });
+
+        const body = await response.json();
+        if (!response.ok) {
+            throw new Error(`Version listing for "${name}" failed: ${response.status} ${JSON.stringify(body)}`);
+        }
+        if (body.id !== id) {
+            throw new Error(`A version listing names the document it belongs to: ${JSON.stringify(body)}`);
+        }
+        if (!Array.isArray(body.versions)) {
+            throw new Error(`Version listing carried no \`versions\` array: ${JSON.stringify(body)}`);
+        }
+        return body.versions;
+    }
+
+    /** Fetch a path taken from a version listing. Reports the status too, so a
+     * step can assert a refusal as readily as a payload. */
+    async fetchPath(caller: AuthzCaller, path: string): Promise<{ status: number; body: any }> {
+        const response = await fetch(`${this.baseUrl}${path}`, {
+            method: 'GET',
+            headers: this.headers(caller),
+        });
+        const body = await response.json().catch(() => null);
+        return { status: response.status, body };
+    }
+
+    /** The path a version token addresses, built without consulting a listing. */
+    versionPath(name: string, token: string): string {
+        return `${WidgetService.restPath}/${this.idFor(name)}/versions/${token}`;
     }
 
     /** Delete through the restlette. Reports whether the delete was applied. */
@@ -292,7 +366,6 @@ export class WidgetHarness {
         private readonly storageFor: WidgetStorageFactory,
         private readonly queries: WidgetQueries,
         private readonly plugins: Record<string, Plugin>,
-        private readonly basePort: number,
     ) {}
 
     /**
@@ -300,14 +373,7 @@ export class WidgetHarness {
      *   service's own config picks one, which is the token plugin.
      */
     async start(auth?: Auth): Promise<WidgetService> {
-        const index = this.next++;
-        const service = new WidgetService(
-            this.storageFor(index),
-            this.queries,
-            this.basePort + index,
-            this.plugins,
-            auth,
-        );
+        const service = new WidgetService(this.storageFor(this.next++), this.queries, this.plugins, auth);
         await service.start();
         return service;
     }
@@ -323,4 +389,5 @@ export type ContractAuthzWorld = {
     result?: string[];
     instants: Record<string, number>;
     deleteApplied?: boolean;
+    versionList?: VersionEntry[];
 };

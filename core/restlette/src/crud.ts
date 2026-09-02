@@ -1,6 +1,6 @@
 import { SystemSession } from '@tailoredshapes/meshql-auth';
 import Log4js from 'log4js';
-import { Auth, Envelope, Repository, Session, Validator } from '@tailoredshapes/meshql-common';
+import { Auth, Envelope, isUnauthorized, Repository, Session, Validator } from '@tailoredshapes/meshql-common';
 import { Request, Response } from 'express';
 
 const logger = Log4js.getLogger('meshql-ts/restlette');
@@ -152,6 +152,66 @@ export class Crud {
             res.send({ deleted: id });
         } else {
             res.status(404).send({});
+        }
+    };
+
+    /**
+     * Every version of one document, oldest first.
+     *
+     * Each entry carries the URL that reaches it. A version the caller may not
+     * read still appears, saying when it happened and whether it was a
+     * deletion, and carrying no URL at all -- omitting the entry would make the
+     * history look continuous when it is not.
+     */
+    list_versions = async (req: Request, res: Response) => {
+        const id = req.params.id;
+        const session: Session = await this._authorizer.authenticate(req);
+        const versions = await this._repo.listVersions(id, session);
+
+        res.send({
+            id,
+            versions: versions.map((version) =>
+                version.token === undefined
+                    ? {
+                          created_at: version.created_at.toISOString(),
+                          deleted: version.deleted,
+                          unauthorized: true,
+                      }
+                    : {
+                          url: `${this._context}/${id}/versions/${version.token}`,
+                          created_at: version.created_at.toISOString(),
+                          deleted: version.deleted,
+                      },
+            ),
+        });
+    };
+
+    /**
+     * One version, in the same shape as reading the document itself.
+     *
+     * An unknown token is a 404. A version the caller cannot read is a 403, not
+     * a 404 -- the listing already told them it exists, and pretending
+     * otherwise would contradict the answer they were just given.
+     */
+    read_version = async (req: Request, res: Response) => {
+        const { id, token } = req.params;
+        const session: Session = await this._authorizer.authenticate(req);
+
+        try {
+            const envelope = await this._repo.readVersion(id, token, session);
+            if (!envelope) {
+                res.status(404).send({});
+                return;
+            }
+            this.setHonestyHeaders(res, envelope);
+            res.send(envelope.payload);
+        } catch (error) {
+            if (isUnauthorized(error)) {
+                res.status(403).send({});
+                return;
+            }
+            logger.error(`Failed to read version ${token} of ${id}: ${error}`);
+            res.status(500).send({});
         }
     };
 

@@ -1,5 +1,14 @@
 import { v4 as uuid } from 'uuid';
-import { authorized, Envelope, Id, Repository, Session } from '@tailoredshapes/meshql-common';
+import {
+    authorized,
+    Envelope,
+    findVersion,
+    Id,
+    Repository,
+    Session,
+    versionRefs,
+    VersionRef,
+} from '@tailoredshapes/meshql-common';
 import { Database } from 'sqlite';
 
 /**
@@ -46,8 +55,8 @@ export class SQLiteRepository implements Repository {
 
     private insert = async (stamped: Envelope): Promise<Envelope> => {
         const query = `
-            INSERT INTO ${this.table} (id, payload, created_at, auth)
-            VALUES (?, ?, ?, ?);
+            INSERT INTO ${this.table} (id, payload, created_at, deleted, auth)
+            VALUES (?, ?, ?, ?, ?);
         `;
         const id = stamped.id || uuid();
         const createdAt = Date.now();
@@ -55,6 +64,7 @@ export class SQLiteRepository implements Repository {
             id,
             JSON.stringify(stamped.payload),
             createdAt,
+            stamped.deleted ? 1 : 0,
             stamped.auth === undefined ? null : JSON.stringify(stamped.auth),
         ];
 
@@ -85,12 +95,18 @@ export class SQLiteRepository implements Repository {
         return created;
     };
 
-    /** The latest non-deleted version, as stored, with no question asked. */
-    private latest = async (id: Id, at: Date): Promise<Envelope | undefined> => {
+    /**
+     * The most recent version at `at`, deleted or not, as stored.
+     *
+     * A delete appends a tombstone rather than flagging the versions before it,
+     * so "is this record gone" is a question about the newest version and not
+     * about any of the ones underneath it.
+     */
+    private latestVersion = async (id: Id, at: Date): Promise<Envelope | undefined> => {
         const row: any = await this.db.get(
             `
             SELECT * FROM ${this.table}
-            WHERE id = ? AND deleted = 0 AND created_at <= ?
+            WHERE id = ? AND created_at <= ?
             ORDER BY created_at DESC
             LIMIT 1;
         `,
@@ -99,6 +115,24 @@ export class SQLiteRepository implements Repository {
 
         return row ? this.rowToEnvelope(row) : undefined;
     };
+
+    /** The latest live version at `at`: a tombstone on top means there is none. */
+    private latest = async (id: Id, at: Date): Promise<Envelope | undefined> => {
+        const envelope = await this.latestVersion(id, at);
+        return envelope && !envelope.deleted ? envelope : undefined;
+    };
+
+    /** Every stored version of one document, in no order; `versionRefs` orders them. */
+    private versions = async (id: Id): Promise<Envelope[]> => {
+        const rows = await this.db.all(`SELECT * FROM ${this.table} WHERE id = ?;`, [id]);
+        return rows.map(this.rowToEnvelope);
+    };
+
+    listVersions = async (id: Id, session: Session): Promise<VersionRef[]> =>
+        versionRefs(session, await this.versions(id));
+
+    readVersion = async (id: Id, token: string, session: Session): Promise<Envelope | undefined> =>
+        findVersion(session, await this.versions(id), token);
 
     read = async (id: Id, session: Session, at: Date = new Date()): Promise<Envelope | undefined> => {
         const envelope = await this.latest(id, at);
@@ -113,20 +147,21 @@ export class SQLiteRepository implements Repository {
         const query = `
             SELECT * FROM ${this.table}
             WHERE id IN (${ids.map(() => '?').join(', ')})
-            AND deleted = 0
             AND created_at <= ?
             ORDER BY created_at DESC;
         `;
         const rows = await this.db.all(query, [...ids, now]);
 
+        // The newest version of each id decides: reached a tombstone and the
+        // record is gone, whatever lies underneath it.
         const seen = new Set<Id>();
         const envelopes: Envelope[] = [];
 
         for (const row of rows) {
-            if (!seen.has(row.id)) {
-                seen.add(row.id);
-                envelopes.push(this.rowToEnvelope(row));
-            }
+            if (seen.has(row.id)) continue;
+            seen.add(row.id);
+            const envelope = this.rowToEnvelope(row);
+            if (!envelope.deleted) envelopes.push(envelope);
         }
 
         return authorized(session, 'read', envelopes);
@@ -137,15 +172,11 @@ export class SQLiteRepository implements Repository {
         if (!current) return false;
         if (!(await session.isAuthorized('remove', current))) return false;
 
-        const result = await this.db.run(
-            `
-            UPDATE ${this.table}
-            SET deleted = 1
-            WHERE id = ?;
-        `,
-            [id],
-        );
-        return result.changes! > 0;
+        // A delete is a version, not an erasure. The tombstone keeps the mark of
+        // the record it buries -- re-stamping it would answer for the plugin --
+        // and leaves the versions before it saying what they always said.
+        await this.insert({ ...current, deleted: true });
+        return true;
     };
 
     removeMany = async (ids: Id[], session: Session): Promise<Record<Id, boolean>> => {
@@ -163,17 +194,16 @@ export class SQLiteRepository implements Repository {
     list = async (session: Session): Promise<Envelope[]> => {
         const rows = await this.db.all(`
             SELECT * FROM ${this.table}
-            WHERE deleted = 0
             ORDER BY created_at DESC;
         `);
 
         const seen = new Set<string>();
         const envelopes: Envelope[] = [];
         for (const row of rows) {
-            if (!seen.has(row.id)) {
-                seen.add(row.id);
-                envelopes.push(this.rowToEnvelope(row));
-            }
+            if (seen.has(row.id)) continue;
+            seen.add(row.id);
+            const envelope = this.rowToEnvelope(row);
+            if (!envelope.deleted) envelopes.push(envelope);
         }
         return authorized(session, 'read', envelopes);
     };

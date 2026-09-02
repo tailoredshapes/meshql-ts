@@ -1,7 +1,16 @@
 import { v4 as uuid } from 'uuid';
 import Log4js from 'log4js';
 import { Collection, Document } from 'mongodb';
-import { authorized, Envelope, Id, Repository, Session } from '@tailoredshapes/meshql-common';
+import {
+    authorized,
+    Envelope,
+    findVersion,
+    Id,
+    Repository,
+    Session,
+    versionRefs,
+    VersionRef,
+} from '@tailoredshapes/meshql-common';
 
 const logger = Log4js.getLogger('meshql-ts/mongorepo');
 
@@ -24,6 +33,9 @@ export class MongoRepository implements Repository {
             id: d.id,
             created_at: d.created_at,
             payload: d.payload,
+            // A tombstone is the only document that carries the field, so an
+            // absent one is a live version rather than a missing answer.
+            deleted: !!d.deleted,
             auth: d.auth,
         };
     }
@@ -62,15 +74,17 @@ export class MongoRepository implements Repository {
         return docs;
     };
 
-    /** The latest non-deleted version, as stored, with no question asked. */
-    private latest = async (id: Id, created_at: Date): Promise<Envelope | undefined> => {
-        let results: Envelope[] = [];
+    /**
+     * The most recent version at `created_at`, deleted or not, as stored.
+     *
+     * A delete appends a tombstone rather than flagging the versions before it,
+     * so "is this record gone" is a question about the newest version and not
+     * about any of the ones underneath it.
+     */
+    private latestVersion = async (id: Id, created_at: Date): Promise<Envelope | undefined> => {
+        let results: Document[] = [];
 
-        const filter: any = {
-            id,
-            created_at: { $lte: created_at },
-            deleted: { $exists: false },
-        };
+        const filter: any = { id, created_at: { $lte: created_at } };
 
         try {
             results = await this.db.find(filter).sort({ created_at: -1 }).toArray();
@@ -78,8 +92,26 @@ export class MongoRepository implements Repository {
             logger.error(`Can't read: ${JSON.stringify(err)}`);
         }
 
-        return results[0];
+        return results[0] ? MongoRepository.toEnvelope(results[0]) : undefined;
     };
+
+    /** The latest live version: a tombstone on top means there is none. */
+    private latest = async (id: Id, created_at: Date): Promise<Envelope | undefined> => {
+        const envelope = await this.latestVersion(id, created_at);
+        return envelope && !envelope.deleted ? envelope : undefined;
+    };
+
+    /** Every stored version of one document; `versionRefs` orders them. */
+    private versions = async (id: Id): Promise<Envelope[]> => {
+        const results = await this.db.find({ id } as any).toArray();
+        return results.map(MongoRepository.toEnvelope);
+    };
+
+    listVersions = async (id: Id, session: Session): Promise<VersionRef[]> =>
+        versionRefs(session, await this.versions(id));
+
+    readVersion = async (id: Id, token: string, session: Session): Promise<Envelope | undefined> =>
+        findVersion(session, await this.versions(id), token);
 
     read = async (id: Id, session: Session, created_at: Date = new Date()): Promise<Envelope | undefined> => {
         const envelope = await this.latest(id, created_at);
@@ -88,10 +120,7 @@ export class MongoRepository implements Repository {
     };
 
     readMany = async (ids: Id[], session: Session): Promise<Envelope[]> => {
-        const match: any = {
-            id: { $in: ids },
-            deleted: { $exists: false },
-        };
+        const match: any = { id: { $in: ids } };
         let results: Document[] = [];
 
         try {
@@ -118,7 +147,10 @@ export class MongoRepository implements Repository {
             logger.error(`Error listing: ${JSON.stringify(err, null, 2)}`);
         }
 
-        return authorized(session, 'read', results.map(MongoRepository.toEnvelope));
+        // The newest version of each id decides: reached a tombstone and the
+        // record is gone, whatever lies underneath it.
+        const live = results.map(MongoRepository.toEnvelope).filter((envelope) => !envelope.deleted);
+        return authorized(session, 'read', live);
     };
 
     remove = async (id: Id, session: Session): Promise<boolean> => {
@@ -126,7 +158,19 @@ export class MongoRepository implements Repository {
         if (!current) return false;
         if (!(await session.isAuthorized('remove', current))) return false;
 
-        await this.db.updateMany({ id }, { $set: { deleted: true } });
+        // A delete is a version, not an erasure. The tombstone keeps the mark of
+        // the record it buries -- re-stamping it would answer for the plugin --
+        // and leaves the versions before it saying what they always said.
+        await this.db.insertOne(
+            {
+                id,
+                payload: current.payload,
+                created_at: new Date(),
+                deleted: true,
+                auth: current.auth,
+            } as Envelope,
+            { writeConcern: { w: 'majority' } },
+        );
         return true;
     };
 
@@ -139,7 +183,7 @@ export class MongoRepository implements Repository {
     };
 
     list = async (session: Session): Promise<Envelope[]> => {
-        const match = { deleted: { $exists: false } };
+        const match = {};
 
         let results: Document[] = [];
 
@@ -167,7 +211,10 @@ export class MongoRepository implements Repository {
             logger.error(`Error listing: ${JSON.stringify(err)}`);
         }
 
-        return authorized(session, 'read', results.map(MongoRepository.toEnvelope));
+        // The newest version of each id decides: reached a tombstone and the
+        // record is gone, whatever lies underneath it.
+        const live = results.map(MongoRepository.toEnvelope).filter((envelope) => !envelope.deleted);
+        return authorized(session, 'read', live);
     };
 
     ready = async (): Promise<boolean> => {

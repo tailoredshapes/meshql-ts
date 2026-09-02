@@ -4,6 +4,11 @@ import { z } from 'zod';
 // Export logging utilities
 export { configureLogging, getLogger } from './logging';
 
+// Addressing one version of a document
+export * from './versions';
+
+import type { VersionRef } from './versions';
+
 // Convert common types to Zod schemas
 export const SingletonSchema = z.object({
     query: z.string(),
@@ -115,6 +120,27 @@ export interface Repository {
     createMany: (payloads: Envelope[], session: Session) => Promise<Envelope[]>;
     readMany: (ids: Id[], session: Session) => Promise<Envelope[]>;
     removeMany: (ids: Id[], session: Session) => Promise<Record<Id, boolean>>;
+
+    /**
+     * Every version of one document, oldest first.
+     *
+     * A version the caller cannot read still appears, carrying when it happened
+     * and whether it was a deletion, and no token. Omitting it would make the
+     * history look continuous when it is not.
+     *
+     * Required, with no default that answers "unsupported": a default lets an
+     * adapter fall out of conformance with nothing saying so.
+     */
+    listVersions: (id: Id, session: Session) => Promise<VersionRef[]>;
+
+    /**
+     * One version, addressed by the token a listing handed out.
+     *
+     * Authorized exactly as `read` is. An unknown token is `undefined`; a token
+     * for a version the caller may not read throws `Unauthorized`.
+     */
+    readVersion: (id: Id, token: string, session: Session) => Promise<Envelope | undefined>;
+
     ready: () => Promise<boolean>;
 }
 

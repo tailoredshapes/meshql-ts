@@ -20,6 +20,8 @@ describe('Health Check Endpoints', () => {
             readMany: vi.fn(),
             remove: vi.fn(),
             removeMany: vi.fn(),
+            listVersions: vi.fn(),
+            readVersion: vi.fn(),
         } as unknown as Repository;
 
         const { health, ready } = createHealthCheck(mockRepo);

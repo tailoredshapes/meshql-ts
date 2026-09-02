@@ -94,12 +94,11 @@ BeforeAll({ timeout: 120000 }, async function () {
 
     // The shared authorization contract. It lists every widget and asserts
     // the result exactly, so each scenario gets its own service over its own
-    // empty table and its own port.
+    // empty storage, on whatever port the OS hands it.
     widgetHarness = new WidgetHarness(
         (index: number): SQLConfig => ({ ...config, collection: `${PREFIX}_${ENV}_widget_${index}` }),
         { byId: queries.henById, byKind: `json_extract(payload, '$.kind') = '{{kind}}'` },
         plugins,
-        port + 200,
     );
 });
 

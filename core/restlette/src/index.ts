@@ -28,6 +28,27 @@ const swaggerOptions = (apiPath: string, port: number, schema: Record<string, an
         },
         schemas: {
             State: schema,
+            VersionRef: {
+                type: 'object',
+                description:
+                    'One version of a document. An entry the caller may not read carries no `url` at all, only when it happened and whether it was a deletion.',
+                properties: {
+                    url: {
+                        type: 'string',
+                        description: 'The path that reaches this version.',
+                    },
+                    created_at: {
+                        type: 'string',
+                        format: 'date-time',
+                    },
+                    deleted: {
+                        type: 'boolean',
+                    },
+                    unauthorized: {
+                        type: 'boolean',
+                    },
+                },
+            },
             OperationStatus: {
                 type: 'object',
                 properties: {
@@ -124,6 +145,8 @@ function createRestletteRouter(apiPath: string, crud: Crud): Router {
     router.get('/bulk', crud.bulk_read);
     router.post('/', crud.create);
     router.get('/', crud.list);
+    router.get('/:id/versions', crud.list_versions);
+    router.get('/:id/versions/:token', crud.read_version);
     router.get('/:id', crud.read);
     router.put('/:id', crud.update);
     router.delete('/:id', crud.remove);

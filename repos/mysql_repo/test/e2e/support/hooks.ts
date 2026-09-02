@@ -94,12 +94,11 @@ BeforeAll({ timeout: 120000 }, async function () {
 
     // The shared authorization contract. It lists every widget and asserts
     // the result exactly, so each scenario gets its own service over its own
-    // empty table and its own port.
+    // empty storage, on whatever port the OS hands it.
     widgetHarness = new WidgetHarness(
         (index: number): MySQLConfig => ({ ...config, table: `${PREFIX}_${ENV}_widget_${index}` }),
         { byId: queries.henById, byKind: `JSON_UNQUOTE(JSON_EXTRACT(payload, '$.kind')) = '{{kind}}'` },
         plugins,
-        port + 200,
     );
 });
 

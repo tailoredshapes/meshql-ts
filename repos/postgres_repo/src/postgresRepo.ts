@@ -1,6 +1,16 @@
 import { Pool, types } from 'pg';
 import { v4 as uuid } from 'uuid';
-import { authorized, Envelope, Id, Repository, Session, getLogger } from '@tailoredshapes/meshql-common';
+import {
+    authorized,
+    Envelope,
+    findVersion,
+    getLogger,
+    Id,
+    Repository,
+    Session,
+    versionRefs,
+    VersionRef,
+} from '@tailoredshapes/meshql-common';
 
 const logger = getLogger('meshql-ts/postgres_repo');
 
@@ -77,11 +87,11 @@ export class PostgresRepository implements Repository {
         const maxRetries = 5;
         const query = `
             INSERT INTO ${this.table} (id, payload, created_at, updated_at, deleted, auth)
-            VALUES ($1, $2::jsonb, NOW(), NOW(), FALSE, $3::jsonb)
+            VALUES ($1, $2::jsonb, NOW(), NOW(), $3, $4::jsonb)
             RETURNING *;
         `;
         const logicalId = stamped.id || uuid();
-        const values = [logicalId, stamped.payload, marshalAuth(stamped.auth)];
+        const values = [logicalId, stamped.payload, stamped.deleted === true, marshalAuth(stamped.auth)];
 
         try {
             const result = await this.pool.query(query, values);
@@ -108,13 +118,18 @@ export class PostgresRepository implements Repository {
         return created;
     };
 
-    /** The latest non-deleted version, as stored, with no question asked. */
-    private latest = async (id: Id, createdAt: Date): Promise<Envelope | undefined> => {
+    /**
+     * The most recent version at `createdAt`, deleted or not, as stored.
+     *
+     * A delete appends a tombstone rather than flagging the versions before it,
+     * so "is this record gone" is a question about the newest version and not
+     * about any of the ones underneath it.
+     */
+    private latestVersion = async (id: Id, createdAt: Date): Promise<Envelope | undefined> => {
         const query = `
             SELECT *
             FROM ${this.table}
             WHERE id = $1
-              AND deleted IS FALSE
               AND created_at <= $2
             ORDER BY created_at DESC
             LIMIT 1;
@@ -125,6 +140,24 @@ export class PostgresRepository implements Repository {
         return row ? PostgresRepository.toEnvelope(row) : undefined;
     };
 
+    /** The latest live version: a tombstone on top means there is none. */
+    private latest = async (id: Id, createdAt: Date): Promise<Envelope | undefined> => {
+        const envelope = await this.latestVersion(id, createdAt);
+        return envelope && !envelope.deleted ? envelope : undefined;
+    };
+
+    /** Every stored version of one document; `versionRefs` orders them. */
+    private versions = async (id: Id): Promise<Envelope[]> => {
+        const result = await this.pool.query(`SELECT * FROM ${this.table} WHERE id = $1;`, [id]);
+        return result.rows.map(PostgresRepository.toEnvelope);
+    };
+
+    listVersions = async (id: Id, session: Session): Promise<VersionRef[]> =>
+        versionRefs(session, await this.versions(id));
+
+    readVersion = async (id: Id, token: string, session: Session): Promise<Envelope | undefined> =>
+        findVersion(session, await this.versions(id), token);
+
     read = async (id: Id, session: Session, createdAt: Date = new Date()): Promise<Envelope | undefined> => {
         const envelope = await this.latest(id, createdAt);
         if (!envelope) return undefined;
@@ -134,12 +167,16 @@ export class PostgresRepository implements Repository {
     readMany = async (ids: Id[], session: Session): Promise<Envelope[]> => {
         if (!ids.length) return [];
 
+        // The newest version of each id decides: reached a tombstone and the
+        // record is gone, whatever lies underneath it.
         const query = `
-            SELECT DISTINCT ON (id) *
-            FROM ${this.table}
-            WHERE id = ANY($1)
-              AND deleted IS FALSE
-            ORDER BY id, created_at DESC;
+            SELECT * FROM (
+                SELECT DISTINCT ON (id) *
+                FROM ${this.table}
+                WHERE id = ANY($1)
+                ORDER BY id, created_at DESC
+            ) latest
+            WHERE deleted IS FALSE;
         `;
         const result = await this.pool.query(query, [ids]);
 
@@ -151,14 +188,10 @@ export class PostgresRepository implements Repository {
         if (!current) return false;
         if (!(await session.isAuthorized('remove', current))) return false;
 
-        await this.pool.query(
-            `
-            UPDATE ${this.table}
-            SET deleted = TRUE
-            WHERE id = $1;
-        `,
-            [id],
-        );
+        // A delete is a version, not an erasure. The tombstone keeps the mark of
+        // the record it buries -- re-stamping it would answer for the plugin --
+        // and leaves the versions before it saying what they always said.
+        await this.insert({ ...current, deleted: true });
         return true;
     };
 
@@ -174,10 +207,12 @@ export class PostgresRepository implements Repository {
 
     list = async (session: Session): Promise<Envelope[]> => {
         const query = `
-            SELECT DISTINCT ON (id) *
-            FROM ${this.table}
-            WHERE deleted IS FALSE
-            ORDER BY id, created_at DESC;
+            SELECT * FROM (
+                SELECT DISTINCT ON (id) *
+                FROM ${this.table}
+                ORDER BY id, created_at DESC
+            ) latest
+            WHERE deleted IS FALSE;
         `;
         const result = await this.pool.query(query);
 

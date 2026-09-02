@@ -8,16 +8,16 @@ export class SQLiteSearcher implements Searcher {
     private table: string;
     private dtoFactory: DTOFactory;
 
-    // `deleted = 0` matches the vector template below, and the Postgres and
-    // MySQL adapters. Without it a tombstoned record stays readable through
-    // `getById` forever: `Repository.remove` flags the row rather than
-    // dropping it, and this query never looked at the flag.
+    // A delete appends a tombstone rather than flagging the versions before it,
+    // so the deletion test belongs on the row a query settles on and not in the
+    // filter that chooses it. Filter first, then reject what the newest version
+    // says is gone: keep `deleted = 0` inside the search and a tombstoned
+    // record stays readable through the version underneath its tombstone.
     private singletonTemplate = Handlebars.compile(`
         SELECT *
         FROM {{_name}}
         WHERE {{{filters}}}
          AND created_at <= {{_created_at}}
-         AND deleted = 0
         ORDER BY created_at DESC
         LIMIT 1
     `);
@@ -30,7 +30,6 @@ export class SQLiteSearcher implements Searcher {
         FROM {{_name}}
         WHERE {{{filters}}}
             AND created_at <= {{_created_at}}
-            AND deleted = 0
         GROUP BY id
         )
         SELECT t1.*
@@ -76,6 +75,7 @@ export class SQLiteSearcher implements Searcher {
 
         if (result && result.payload) {
             const envelope = this.rowToEnvelope(result);
+            if (envelope.deleted) return {};
 
             if (await session.isAuthorized('read', envelope)) {
                 envelope.payload.id = envelope.id;

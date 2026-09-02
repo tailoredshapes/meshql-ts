@@ -98,12 +98,11 @@ BeforeAll({ timeout: 120000 }, async function () {
 
     // The shared authorization contract. It lists every widget and asserts
     // the result exactly, so each scenario gets its own service over its own
-    // empty collection and its own port.
+    // empty storage, on whatever port the OS hands it.
     widgetHarness = new WidgetHarness(
         (index: number): MongoConfig => ({ ...config, collection: `${PREFIX}-${ENV}-widget-${index}` }),
         { byId: queries.henById, byKind: `{"payload.kind": "{{kind}}"}` },
         plugins,
-        port + 200,
     );
 });
 

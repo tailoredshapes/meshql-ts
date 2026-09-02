@@ -245,5 +245,100 @@ export const paths = (context: string) => {
                 },
             },
         },
+        [`${context}/{id}/versions`]: {
+            get: {
+                summary: 'Lists every version of a document, oldest first',
+                operationId: 'list_versions',
+                security: [
+                    {
+                        BearerAuth: [],
+                    },
+                ],
+                parameters: [
+                    {
+                        in: 'path',
+                        name: 'id',
+                        required: true,
+                        schema: {
+                            type: 'string',
+                        },
+                        description: 'The ID of the document whose history to list.',
+                    },
+                ],
+                responses: {
+                    200: {
+                        description:
+                            'The document’s versions, oldest first. An entry the caller may not read carries no URL.',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    type: 'object',
+                                    properties: {
+                                        id: {
+                                            type: 'string',
+                                        },
+                                        versions: {
+                                            type: 'array',
+                                            items: {
+                                                $ref: '#/components/schemas/VersionRef',
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+        [`${context}/{id}/versions/{token}`]: {
+            get: {
+                summary: 'Retrieves one version of a document',
+                operationId: 'read_version',
+                security: [
+                    {
+                        BearerAuth: [],
+                    },
+                ],
+                parameters: [
+                    {
+                        in: 'path',
+                        name: 'id',
+                        required: true,
+                        schema: {
+                            type: 'string',
+                        },
+                        description: 'The ID of the document.',
+                    },
+                    {
+                        in: 'path',
+                        name: 'token',
+                        required: true,
+                        schema: {
+                            type: 'string',
+                        },
+                        description: 'The version token, as handed out by the version listing.',
+                    },
+                ],
+                responses: {
+                    200: {
+                        description: 'The document as that version left it.',
+                        content: {
+                            'application/json': {
+                                schema: {
+                                    $ref: '#/components/schemas/State',
+                                },
+                            },
+                        },
+                    },
+                    403: {
+                        description: 'The caller may not read that version.',
+                    },
+                    404: {
+                        description: 'No version of that document carries the given token.',
+                    },
+                },
+            },
+        },
     };
 };

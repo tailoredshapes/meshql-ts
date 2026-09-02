@@ -1,6 +1,16 @@
 import { Pool, RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { v4 as uuid } from 'uuid';
-import { authorized, Envelope, Id, Payload, Repository, Session } from '@tailoredshapes/meshql-common';
+import {
+    authorized,
+    Envelope,
+    findVersion,
+    Id,
+    Payload,
+    Repository,
+    Session,
+    versionRefs,
+    VersionRef,
+} from '@tailoredshapes/meshql-common';
 import Log4js from 'log4js';
 
 const logger = Log4js.getLogger('meshql-ts/mysql_repo');
@@ -34,15 +44,24 @@ export const parseAuth = (auth: unknown): unknown => {
 
 const marshalAuth = (auth: unknown): string | null => (auth === undefined ? null : JSON.stringify(auth));
 
+/**
+ * A row as it is stored, with nothing merged into the payload.
+ *
+ * A version's address is derived from its payload, so anything this mapper adds
+ * would become part of the address and MySQL would hand out URLs no other
+ * adapter could resolve.
+ */
+export const rowToStoredEnvelope = (row: EnvelopeRow): Envelope => ({
+    id: row.id,
+    payload: row.payload,
+    created_at: new Date(Number(row.created_at)),
+    deleted: !!row.deleted,
+    auth: parseAuth(row.auth),
+});
+
 export const rowToEnvelope = (row: EnvelopeRow): Envelope => {
     row.payload.id = row.id;
-    return {
-        id: row.id,
-        payload: row.payload,
-        created_at: new Date(Number(row.created_at)),
-        deleted: !!row.deleted,
-        auth: parseAuth(row.auth),
-    };
+    return rowToStoredEnvelope(row);
 };
 
 export class MySQLRepository implements Repository {
@@ -90,14 +109,22 @@ export class MySQLRepository implements Repository {
         }
     }
 
-    private insert = async (stamped: Envelope): Promise<Envelope> => {
+    /**
+     * Insert one version. `UNIQUE (id, created_at)` makes two versions of one
+     * document in the same millisecond a duplicate-key error rather than a
+     * silent collision, so a colliding write waits and takes the next
+     * millisecond, exactly as the SQLite and Postgres adapters do.
+     */
+    private insert = async (stamped: Envelope, retryCount = 0): Promise<Envelope> => {
+        const maxRetries = 5;
         const logicalId = stamped.id || uuid();
         const now = Date.now();
+        const deleted = stamped.deleted === true;
         const query = `
-            INSERT INTO ${this.table} (id, payload, auth, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?);
+            INSERT INTO ${this.table} (id, payload, auth, created_at, updated_at, deleted)
+            VALUES (?, ?, ?, ?, ?, ?);
         `;
-        const values = [logicalId, JSON.stringify(stamped.payload), marshalAuth(stamped.auth), now, now];
+        const values = [logicalId, JSON.stringify(stamped.payload), marshalAuth(stamped.auth), now, now, deleted];
 
         try {
             await this.pool.query<ResultSetHeader>(query, values);
@@ -105,10 +132,14 @@ export class MySQLRepository implements Repository {
                 id: logicalId,
                 payload: stamped.payload,
                 created_at: new Date(now),
-                deleted: false,
+                deleted,
                 auth: stamped.auth,
             };
-        } catch (err) {
+        } catch (err: any) {
+            if (err?.code === 'ER_DUP_ENTRY' && retryCount < maxRetries) {
+                await new Promise((resolve) => setTimeout(resolve, 2));
+                return this.insert(stamped, retryCount + 1);
+            }
             logger.error(`Failed to create document: ${err}`);
             throw err;
         }
@@ -126,13 +157,18 @@ export class MySQLRepository implements Repository {
         return created;
     };
 
-    /** The latest non-deleted version, as stored, with no question asked. */
-    private latest = async (id: Id, createdAt: Date): Promise<Envelope | undefined> => {
+    /**
+     * The most recent version at `createdAt`, deleted or not, as stored.
+     *
+     * A delete appends a tombstone rather than flagging the versions before it,
+     * so "is this record gone" is a question about the newest version and not
+     * about any of the ones underneath it.
+     */
+    private latestVersion = async (id: Id, createdAt: Date): Promise<Envelope | undefined> => {
         const query = `
             SELECT *
             FROM ${this.table}
             WHERE id = ?
-              AND deleted = FALSE
               AND created_at <= ?
             ORDER BY created_at DESC
             LIMIT 1;
@@ -140,8 +176,26 @@ export class MySQLRepository implements Repository {
 
         const [rows] = await this.pool.query<EnvelopeRow[]>(query, [id, createdAt.getTime()]);
         if (!rows.length) return undefined;
-        return rowToEnvelope(rows[0]);
+        return rowToStoredEnvelope(rows[0]);
     };
+
+    /** The latest live version: a tombstone on top means there is none. */
+    private latest = async (id: Id, createdAt: Date): Promise<Envelope | undefined> => {
+        const envelope = await this.latestVersion(id, createdAt);
+        return envelope && !envelope.deleted ? envelope : undefined;
+    };
+
+    /** Every stored version of one document, payloads exactly as written. */
+    private versions = async (id: Id): Promise<Envelope[]> => {
+        const [rows] = await this.pool.query<EnvelopeRow[]>(`SELECT * FROM ${this.table} WHERE id = ?;`, [id]);
+        return rows.map(rowToStoredEnvelope);
+    };
+
+    listVersions = async (id: Id, session: Session): Promise<VersionRef[]> =>
+        versionRefs(session, await this.versions(id));
+
+    readVersion = async (id: Id, token: string, session: Session): Promise<Envelope | undefined> =>
+        findVersion(session, await this.versions(id), token);
 
     read = async (id: Id, session: Session, createdAt: Date = new Date()): Promise<Envelope | undefined> => {
         try {
@@ -166,14 +220,16 @@ export class MySQLRepository implements Repository {
                    FIRST_VALUE(auth) OVER w AS auth
             FROM ${this.table}
             WHERE id IN (${placeholders})
-              AND deleted = FALSE
             WINDOW w AS (PARTITION BY id ORDER BY created_at DESC)
             ORDER BY created_at DESC;
         `;
 
         try {
             const [rows] = await this.pool.query<EnvelopeRow[]>(query, ids);
-            return authorized(session, 'read', rows.map(rowToEnvelope));
+            // The newest version of each id decides: reached a tombstone and
+            // the record is gone, whatever lies underneath it.
+            const live = rows.filter((row) => !row.deleted);
+            return authorized(session, 'read', live.map(rowToStoredEnvelope));
         } catch (err) {
             logger.error(`Failed to read multiple documents: ${err}`);
             throw err;
@@ -186,14 +242,11 @@ export class MySQLRepository implements Repository {
             if (!current) return false;
             if (!(await session.isAuthorized('remove', current))) return false;
 
-            await this.pool.query<ResultSetHeader>(
-                `
-                UPDATE ${this.table}
-                SET deleted = TRUE
-                WHERE id = ?;
-            `,
-                [id],
-            );
+            // A delete is a version, not an erasure. The tombstone keeps the
+            // mark of the record it buries -- re-stamping it would answer for
+            // the plugin -- and leaves the versions before it saying what they
+            // always said.
+            await this.insert({ ...current, deleted: true });
             return true;
         } catch (err) {
             logger.error(`Failed to remove document: ${err}`);
@@ -219,20 +272,23 @@ export class MySQLRepository implements Repository {
                    FIRST_VALUE(deleted) OVER w AS deleted,
                    FIRST_VALUE(auth) OVER w AS auth
             FROM ${this.table}
-            WHERE deleted = FALSE
             WINDOW w AS (PARTITION BY id ORDER BY created_at DESC)
             ORDER BY created_at DESC;
         `;
 
         try {
             const [rows] = await this.pool.query<EnvelopeRow[]>(query);
-            const envelopes: Envelope[] = rows.map((row) => ({
-                id: row.id,
-                payload: row.payload as Payload,
-                created_at: new Date(Number(row.created_at)),
-                deleted: !!row.deleted,
-                auth: parseAuth(row.auth),
-            }));
+            // The newest version of each id decides: reached a tombstone and
+            // the record is gone, whatever lies underneath it.
+            const envelopes: Envelope[] = rows
+                .filter((row) => !row.deleted)
+                .map((row) => ({
+                    id: row.id,
+                    payload: row.payload as Payload,
+                    created_at: new Date(Number(row.created_at)),
+                    deleted: !!row.deleted,
+                    auth: parseAuth(row.auth),
+                }));
             return authorized(session, 'read', envelopes);
         } catch (err) {
             logger.error(`Failed to list documents: ${err}`);

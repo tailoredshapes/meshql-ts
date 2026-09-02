@@ -1,4 +1,4 @@
-import { authorized, Envelope, Id, Repository, Session } from '../src';
+import { authorized, Envelope, findVersion, Id, Repository, Session, versionRefs, VersionRef } from '../src';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -12,11 +12,27 @@ import { v4 as uuidv4 } from 'uuid';
 export class InMemory implements Repository {
     db: Record<Id, Envelope[]> = {};
 
+    /**
+     * When the next version of a document happened.
+     *
+     * Two versions of one document never share an instant, which is what the
+     * `UNIQUE (id, created_at)` constraint and its insert retry buy the SQL
+     * adapters. An in-memory double writes fast enough to collide on every
+     * write, and a double that collides where a real adapter cannot would let
+     * an ordering bug pass here and fail in production.
+     */
+    private nextInstant(id: Id): Date {
+        const versions = this.db[id];
+        const previous = versions?.[versions.length - 1]?.created_at?.getTime();
+        const now = Date.now();
+        return new Date(previous === undefined ? now : Math.max(now, previous + 1));
+    }
+
     async create(payload: Envelope, session: Session): Promise<Envelope> {
         const stamped: Envelope = { ...(await session.stamp(payload)) };
         const id = stamped.id || uuidv4();
         stamped.id = id;
-        stamped.created_at = new Date();
+        stamped.created_at = this.nextInstant(id);
         stamped.deleted = false;
 
         if (this.db[id]) {
@@ -38,34 +54,41 @@ export class InMemory implements Repository {
 
     async list(session: Session): Promise<Envelope[]> {
         const result: Envelope[] = [];
-        const seen = new Set<Id>();
 
-        for (const envList of Object.values(this.db)) {
-            // Filter out deleted envelopes
-            const nonDeletedEnvelopes = envList.filter((e) => !e.deleted);
-            if (nonDeletedEnvelopes.length > 0) {
-                // Sort by created_at descending to get the latest version
-                nonDeletedEnvelopes.sort((a, b) => b.created_at!.getTime() - a.created_at!.getTime());
-                const latestEnvelope = nonDeletedEnvelopes[0];
-
-                // Add the latest envelope if it hasn't been added yet
-                if (!seen.has(latestEnvelope.id!)) {
-                    seen.add(latestEnvelope.id!);
-                    result.push(latestEnvelope);
-                }
-            }
+        for (const id of Object.keys(this.db)) {
+            const latest = this.latest(id, new Date());
+            if (latest) result.push(latest);
         }
         return authorized(session, 'read', result);
     }
 
-    /** The latest non-deleted version, as stored, with no question asked. */
-    private latest(id: Id, created_at: Date): Envelope | undefined {
+    /**
+     * The most recent version at `created_at`, deleted or not, as stored.
+     *
+     * A delete appends a tombstone rather than flagging the versions before it,
+     * so "is this record gone" is a question about the newest version.
+     */
+    private latestVersion(id: Id, created_at: Date): Envelope | undefined {
         const envelopes = this.db[id];
         if (!envelopes) return undefined;
 
         return envelopes
-            .filter((e) => e.created_at!.getTime() <= created_at.getTime() && e.deleted === false)
+            .filter((e) => e.created_at!.getTime() <= created_at.getTime())
             .sort((a, b) => b.created_at!.getTime() - a.created_at!.getTime())[0];
+    }
+
+    /** The latest live version: a tombstone on top means there is none. */
+    private latest(id: Id, created_at: Date): Envelope | undefined {
+        const envelope = this.latestVersion(id, created_at);
+        return envelope && !envelope.deleted ? envelope : undefined;
+    }
+
+    async listVersions(id: Id, session: Session): Promise<VersionRef[]> {
+        return versionRefs(session, this.db[id] ?? []);
+    }
+
+    async readVersion(id: Id, token: string, session: Session): Promise<Envelope | undefined> {
+        return findVersion(session, this.db[id] ?? [], token);
     }
 
     async read(id: Id, session: Session, created_at: Date = new Date()): Promise<Envelope | undefined> {
@@ -84,10 +107,10 @@ export class InMemory implements Repository {
         if (!current) return false;
         if (!(await session.isAuthorized('remove', current))) return false;
 
-        this.db[id] = this.db[id].map((e) => {
-            e.deleted = true;
-            return e;
-        });
+        // A delete is a version, not an erasure. The tombstone keeps the mark
+        // of the record it buries, and the versions before it keep saying what
+        // they always said.
+        this.db[id].push({ ...current, created_at: this.nextInstant(id), deleted: true });
         return true;
     }
 

@@ -12,12 +12,16 @@ export class MySQLSearcher implements Searcher {
     private table: string;
     private dtoFactory: DTOFactory;
 
+    // A delete appends a tombstone rather than flagging the versions before it,
+    // so the deletion test belongs on the row a query settles on and not in the
+    // filter that chooses it. Filter first, then reject what the newest matching
+    // version says is gone: keep `deleted = FALSE` inside the search and a
+    // tombstoned record stays readable through the version underneath it.
     private singletonQuery = Handlebars.compile(`
         SELECT *
         FROM {{_name}}
         WHERE {{{filters}}}
           AND created_at <= ?
-          AND deleted = FALSE
         ORDER BY created_at DESC
         LIMIT 1
     `);
@@ -31,7 +35,6 @@ export class MySQLSearcher implements Searcher {
         FROM {{_name}}
         WHERE {{{filters}}}
           AND created_at <= ?
-          AND deleted = FALSE
         WINDOW w AS (PARTITION BY id ORDER BY created_at DESC)
         ORDER BY created_at DESC
     `);
@@ -68,6 +71,7 @@ export class MySQLSearcher implements Searcher {
 
             if (rows.length > 0) {
                 const envelope = rowToEnvelope(rows[0]);
+                if (envelope.deleted) return {};
 
                 if (await session.isAuthorized('read', envelope)) {
                     // rowToEnvelope already merges id into row.payload as a
@@ -100,7 +104,9 @@ export class MySQLSearcher implements Searcher {
         try {
             const [rows] = await this.pool.query<EnvelopeRow[]>(sql, [timestamp]);
 
-            const envelopes = rows.map(rowToEnvelope);
+            // The newest matching version of each id decides: reached a
+            // tombstone and the record is gone, whatever lies underneath it.
+            const envelopes = rows.filter((row) => !row.deleted).map(rowToEnvelope);
             const authorizedResults = await authorized(session, 'read', envelopes);
 
             // `limit` arrives as an ordinary query argument. It truncates after the

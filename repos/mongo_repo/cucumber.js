@@ -18,6 +18,8 @@ module.exports = {
             'test/e2e/support/**/*.ts'
         ],
         paths: ['../../core/cert/features/e2e/**/*.feature'],
+        // schema.feature certifies the restlette, not storage: it runs once, on SQLite.
+        tags: 'not @restlette',
         format: ['progress', 'json:test-results-bdd-e2e.json'],
         formatOptions: { snippetInterface: 'async-await' },
     }

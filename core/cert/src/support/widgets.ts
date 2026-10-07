@@ -117,7 +117,13 @@ export class WidgetService {
     /** Widget name to envelope id. Names are unique within a scenario. */
     private readonly ids: Record<string, string> = {};
 
-    constructor(storage: StorageConfig, queries: WidgetQueries, plugins: Record<string, Plugin>, auth?: Auth) {
+    constructor(
+        storage: StorageConfig,
+        queries: WidgetQueries,
+        plugins: Record<string, Plugin>,
+        auth?: Auth,
+        restSchema: Record<string, any> = WIDGET_JSON_SCHEMA,
+    ) {
         this.storage = storage;
         this.plugins = plugins;
         this.auth = auth;
@@ -147,7 +153,9 @@ export class WidgetService {
                 {
                     path: WidgetService.restPath,
                     storage,
-                    schema: WIDGET_JSON_SCHEMA,
+                    // The restlette's JSON Schema, enforced by the restlette
+                    // itself: `schema.feature` hands in its own.
+                    schema: restSchema,
                 },
             ],
         };
@@ -229,6 +237,22 @@ export class WidgetService {
         const id = location.substring(location.lastIndexOf('/') + 1);
         this.ids[name] = id;
         return id;
+    }
+
+    /**
+     * A write that may be refused: the status, and nothing asserted.
+     * `schema.feature` sends documents the restlette's schema rejects, so
+     * whether the write landed is the step's question, not this method's.
+     */
+    async attempt(caller: AuthzCaller, method: 'POST' | 'PUT', path: string, document: Record<string, any>): Promise<number> {
+        const response = await fetch(`${this.baseUrl}${path}`, {
+            method,
+            headers: this.headers(caller),
+            body: JSON.stringify(document),
+            redirect: 'manual',
+        });
+        await response.text();
+        return response.status;
     }
 
     /** Replace a widget through the restlette, exactly as a real client would. */
@@ -371,9 +395,11 @@ export class WidgetHarness {
     /**
      * @param auth the auth plugin this scenario runs against. Omitted, the
      *   service's own config picks one, which is the token plugin.
+     * @param restSchema the widget restlette's JSON Schema. Omitted, the
+     *   harness's own.
      */
-    async start(auth?: Auth): Promise<WidgetService> {
-        const service = new WidgetService(this.storageFor(this.next++), this.queries, this.plugins, auth);
+    async start(auth?: Auth, restSchema?: Record<string, any>): Promise<WidgetService> {
+        const service = new WidgetService(this.storageFor(this.next++), this.queries, this.plugins, auth, restSchema);
         await service.start();
         return service;
     }
@@ -389,5 +415,6 @@ export type ContractAuthzWorld = {
     result?: string[];
     instants: Record<string, number>;
     deleteApplied?: boolean;
+    writeStatus?: number;
     versionList?: VersionEntry[];
 };

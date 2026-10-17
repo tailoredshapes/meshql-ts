@@ -27,7 +27,9 @@ module.exports = {
             '../../core/cert/src/steps/**/*.ts',
             'test/e2e/support/**/*.ts'
         ],
-        paths: ['../../core/cert/features/e2e/**/*.feature'],
+        // The egg economy runs on one store only: meshql is storage agnostic, which the
+        // storage contracts (-p int, and versions.feature) prove per store.
+        paths: ['../../core/cert/features/e2e/**/*.feature', '../../core/cert/features/egg/*.feature'],
         format: ['progress', 'json:test-results-bdd-e2e.json'],
         formatOptions: { snippetInterface: 'async-await' },
         publishQuiet: true

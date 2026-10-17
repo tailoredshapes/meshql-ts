@@ -1,17 +1,10 @@
 import { Before, AfterAll, BeforeAll } from '@cucumber/cucumber';
 import Log4js from 'log4js';
-import {
-    FarmTestWorld,
-    DBFactories,
-    FarmQueries,
-    AuthzTestWorld,
-    ContractAuthzWorld,
-    unverifiedToken,
-} from '@tailoredshapes/meshql-cert';
+import { AuthzTestWorld, ContractAuthzWorld } from '@tailoredshapes/meshql-cert';
 import { SQLConfig, SQLitePlugin } from '../../../src';
 import { Plugin } from '@tailoredshapes/meshql-server';
 import { Server } from 'node:http';
-import { FarmEnv, AuthzEnv, WidgetHarness } from '@tailoredshapes/meshql-cert';
+import { AuthzEnv, WidgetHarness, EggHarness, EggWorld } from '@tailoredshapes/meshql-cert';
 import fs from 'fs';
 
 Log4js.configure({
@@ -19,14 +12,12 @@ Log4js.configure({
     categories: { default: { appenders: ['out'], level: 'error' } },
 });
 
-let dbFactories: DBFactories;
 let config: SQLConfig;
 let plugins: Record<string, Plugin>;
-let server: Server;
-let farmEnv: FarmEnv;
 let authzEnv: AuthzEnv;
 let authzServer: Server;
 let widgetHarness: WidgetHarness;
+let eggHarness: EggHarness;
 
 BeforeAll({ timeout: 120000 }, async function () {
     const PREFIX = 'cert';
@@ -45,43 +36,17 @@ BeforeAll({ timeout: 120000 }, async function () {
         collection: 'CHANGE ME',
     };
 
-    dbFactories = {
-        henDB: (): SQLConfig => {
-            return { ...config, collection: `${PREFIX}_${ENV}_hen` };
-        },
-        coopDB: (): SQLConfig => {
-            return { ...config, collection: `${PREFIX}_${ENV}_coop` };
-        },
-        farmDB: (): SQLConfig => {
-            return { ...config, collection: `${PREFIX}_${ENV}_farm` };
-        },
-    };
-
     let port = 5044;
 
-    let platformUrl = 'http://localhost:' + port;
-
-    const queries: FarmQueries = {
-        farmById: `id = '{{id}}'`,
-        coopById: `id = '{{id}}'`,
-        coopByName: `json_extract(payload, '$.name') = '{{id}}'`,
-        coopByFarmId: `json_extract(payload, '$.farm_id') = '{{id}}'`,
+    const queries = {
         henById: `id = '{{id}}'`,
         henByName: `json_extract(payload, '$.name') = '{{name}}'`,
-        henByCoopId: `json_extract(payload, '$.coop_id') = '{{id}}'`,
     };
 
-    farmEnv = new FarmEnv(dbFactories, queries, platformUrl, port);
     plugins = { sqlite: new SQLitePlugin() };
-    server = await farmEnv.buildService(plugins);
-
-    // Initialize runtime properties in FarmEnv
-    farmEnv.token = unverifiedToken('test-user');
-    farmEnv.swaggerDocs = await farmEnv.getSwaggerDocs();
-    farmEnv.apis = await farmEnv.buildApi(farmEnv.swaggerDocs, farmEnv.token);
 
     // Authorization certification: its own service, its own table, so the
-    // farm scenarios and the authz scenarios can't contaminate each other.
+    // authz scenarios can't contaminate anything else.
     const authzStorage: SQLConfig = { ...config, collection: `${PREFIX}_${ENV}_authz` };
     authzEnv = new AuthzEnv(
         authzStorage,
@@ -100,17 +65,25 @@ BeforeAll({ timeout: 120000 }, async function () {
         { byId: queries.henById, byKind: `json_extract(payload, '$.kind') = '{{kind}}'` },
         plugins,
     );
+
+    // The egg economy: fourteen entities per scenario, each in its own table.
+    eggHarness = new EggHarness(
+        (entity, scenario): SQLConfig => ({ ...config, collection: `${PREFIX}_${ENV}_egg${scenario}_${entity}` }),
+        {
+            byId: queries.henById,
+            where: (field, arg) => `json_extract(payload, '$.${field}') = '{{${arg}}}'`,
+        },
+        plugins,
+    );
 });
 
-Before(async function (this: FarmTestWorld & AuthzTestWorld & ContractAuthzWorld) {
-    this.server = server;
-    this.env = farmEnv;
+Before(async function (this: AuthzTestWorld & ContractAuthzWorld & EggWorld) {
     this.authz = authzEnv;
     this.widgetHarness = widgetHarness;
+    this.eggs = eggHarness;
 });
 
 AfterAll(async function () {
     await plugins['sqlite'].cleanup();
-    await new Promise<void>((resolve) => server.close(() => resolve()));
     await new Promise<void>((resolve) => authzServer.close(() => resolve()));
 });

@@ -247,7 +247,7 @@ Focus reviews on:
 `core/cert/features/e2e/authorization.feature` is the executable statement of
 the authorization contract, and every adapter runs it (`yarn cucumber-js -p e2e`).
 
-It exists because the farm certification cannot prove authorization works: it
+It exists because the farm certification could not prove authorization works: it
 drives every request as a single caller, and against one caller a working
 authorization filter and an inert one are indistinguishable. The authz suite
 uses four callers with non-overlapping credentials (`alice`/`bob`/`root`/
@@ -304,6 +304,57 @@ particular:
 - Adding a helper that lets a caller decide visibility without asking the
   session re-creates exactly the bypass this design removed. Don't.
 
+### The egg economy certification
+
+`core/cert/features/egg/egg_economy.feature` is a symlink to the contract's
+`features/proposed/egg-economy/egg_economy.feature` (tagged `@proposed`; sqlite's `e2e` profile runs it). It replaces the farm as *the deployment* the
+end-to-end suite certifies against. Read `specs/egg-economy.md` in the contract
+first. It certifies three surfaces:
+
+- **An event restlette is create-only.** `frozen: true` in the restlette config:
+  `PUT` and `DELETE` answer 405 (`core/restlette`, the router).
+- **A projection restlette is closed to the front end.** `producedBy: <sub>`:
+  a write whose bearer `sub` is not the worker's answers 403
+  (`core/server/src/producer.ts`, a decoration of the auth plugin; the plugin
+  surface is unchanged). The worker writes with its own token.
+- **The graph federates** across 14 entities (`farm coop hen container
+  consumer`, five events, four projections) in both directions, with `at:`.
+
+The deployment is *derived* from one table, `core/cert/src/support/egg_model.ts`
+(JSON Schema, GraphQL and resolvers per entity), the way `examples/farm/config`
+is written out by hand. `egg.ts` is the harness and `steps/egg_economy.steps.ts`
+the bindings.
+
+**The CDC and the worker are the harness's, not meshql's, and not under test.**
+`egg.ts` carries events to a worker with a poller of the event restlette's own
+listing (store-neutral; a deployment would use Debezium/Kafka, a connector, or a
+trigger and a queue table) and a reference hen worker that recomputes a hen's
+`hen_productivity` from all of her lay reports, so a redelivery changes nothing.
+It folds nothing else: no `farm_output`, `container_inventory` or `rejection`
+worker (those entities are served and closed, but nothing fills them here). No
+library code may start or know about any of this.
+
+A service per scenario, over fourteen tables per scenario (names carry the
+scenario number), on a port picked by the harness because the graphlettes
+reach one another by URL. Creating the tables is slow on MySQL, so the
+Background step has a 120 s timeout; "eventually" is `EGG_TIMEOUT_MS`
+(default 10 s) and the step carries a Cucumber timeout above it.
+
+A store's hooks need only an `EggHarness`: a storage config per `(entity,
+scenario)`, and an `EggDialect` (`byId`, and `where(field, arg)` spelling "the
+payload's field equals the argument" in that store's query language).
+
+**One store runs it: SQLite.** meshql is storage agnostic, and the storage
+certs (repository, searcher and versions features, per store) prove that; the
+suite is a test pyramid, not a matrix. `repos/sqlite_repo/cucumber.js` adds
+`core/cert/features/egg/` to its `e2e` profile; the other stores' hooks do not
+build an `EggHarness`, and their `e2e` profile does not see the feature. The
+farm certification (`farm.feature`, `FarmEnv`, its steps and config) is gone:
+the egg economy is the single end-to-end deployment. What only the farm
+exercised, a forward reference (hen -> coop -> farm) and an `at:` rewind of an
+updated actor, is no longer certified by an end-to-end scenario.
+`examples/farm` remains as an example (with its own docker-based feature).
+
 ### The shared authorization contract
 
 `core/cert/features/contract` is the `meshql-contract` submodule: the Gherkin
@@ -330,8 +381,8 @@ bearing:
 If you add a storage backend, wire it into both suites the way
 `repos/*/test/e2e/support/hooks.ts` does: one `AuthzEnv` on its own
 table/collection and its own port (`port + 100` — the Fetch spec blocks a
-handful of ports, 4045 among them), and one `WidgetHarness` at `port + 200`,
-which claims one port per contract scenario.
+handful of ports, 4045 among them), and one `WidgetHarness`, which claims one
+port per contract scenario. (The egg economy is not wired per store: SQLite only.)
 
 ## Configuration System
 

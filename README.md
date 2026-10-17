@@ -171,7 +171,31 @@ storage = {
 
 For detailed configuration options, see the respective database plugin READMEs.
 
-### 3. API Configuration
+### 3. Events, actors and projections
+
+A restlette carries two optional keys that say what kind of entity it serves
+(the domain pattern is the contract's `specs/egg-economy.md`):
+
+| Key | Kind | Effect |
+|---|---|---|
+| *(neither)* | actor | written directly by the front end |
+| `frozen: true` | event | create-only: `PUT` and `DELETE` answer `405` (and are left out of the OpenAPI document). A new state is a new document |
+| `producedBy: "hen_worker"` (or a list) | projection | written only by the named worker(s): `POST`, `PUT`, `DELETE` and bulk from any caller whose bearer `sub` is not one of them answer `403`. Reads are the auth plugin's, as for any entity |
+
+```hocon
+restlettes: [
+  { path: "/lay_report/api",       storage: {...}, schema: {...}, frozen: true }
+  { path: "/hen_productivity/api", storage: {...}, schema: {...}, producedBy: "hen_worker" }
+]
+```
+
+`producedBy` decorates whichever auth plugin runs (`core/server/src/producer.ts`);
+it compares the *identity* (`sub`), not the credentials the plugin resolves it
+to, so a front end can be given the right to read what a worker marks without
+gaining the right to write it. How an event reaches a worker is not meshql's
+business, and no library code starts or knows about a CDC, a bridge or a worker.
+
+### 4. API Configuration
 
 For detailed API configuration examples, see the [@meshql-ts/server documentation](packages/server/README.md).
 
@@ -207,6 +231,15 @@ MeshQL uses container-based testing for database integrations:
 - MySQL tests with containerized MySQL 8.0
 - MongoDB tests with mongodb-memory-server
 - SQLite tests with in-memory database
+
+Each storage plugin runs the shared storage contracts with
+`yarn cucumber-js -p int` and `-p e2e` in its own directory. meshql is storage
+agnostic and those contracts prove it per store; the end-to-end deployment is
+run once, on SQLite (a test pyramid, not a matrix). It is the egg economy:
+fourteen entities in three kinds, `core/cert/src/support/egg_model.ts`, with the
+contract's `egg_economy.feature` (`core/cert/features/egg/egg_economy.feature`
+is a symlink into the submodule). The harness supplies the CDC and a reference worker; they
+are not under test (see CLAUDE.md, "The egg economy certification").
 
 ## API Documentation
 

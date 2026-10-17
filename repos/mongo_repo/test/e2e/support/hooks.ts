@@ -1,18 +1,11 @@
 import { Before, AfterAll, BeforeAll } from '@cucumber/cucumber';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import Log4js from 'log4js';
-import {
-    FarmTestWorld,
-    DBFactories,
-    FarmQueries,
-    AuthzTestWorld,
-    ContractAuthzWorld,
-    unverifiedToken,
-} from '@tailoredshapes/meshql-cert';
+import { AuthzTestWorld, ContractAuthzWorld } from '@tailoredshapes/meshql-cert';
 import { MongoConfig, MongoPlugin } from '../../../src';
 import { Plugin } from '@tailoredshapes/meshql-server';
 import { Server } from 'node:http';
-import { FarmEnv, AuthzEnv, WidgetHarness } from '@tailoredshapes/meshql-cert';
+import { AuthzEnv, WidgetHarness } from '@tailoredshapes/meshql-cert';
 
 Log4js.configure({
     appenders: { out: { type: 'stdout' } },
@@ -20,11 +13,8 @@ Log4js.configure({
 });
 
 let mongod: MongoMemoryServer;
-let dbFactories: DBFactories;
 let config: MongoConfig;
 let plugins: Record<string, Plugin>;
-let server: Server;
-let farmEnv: FarmEnv;
 let authzEnv: AuthzEnv;
 let authzServer: Server;
 let widgetHarness: WidgetHarness;
@@ -46,46 +36,17 @@ BeforeAll({ timeout: 120000 }, async function () {
         },
     };
 
-    dbFactories = {
-        henDB: (): MongoConfig => {
-            config.collection = `${PREFIX}-${ENV}-hen`;
-            return config;
-        },
-        coopDB: (): MongoConfig => {
-            config.collection = `${PREFIX}-${ENV}-coop`;
-            return config;
-        },
-        farmDB: (): MongoConfig => {
-            config.collection = `${PREFIX}-${ENV}-farm`;
-            return config;
-        },
-    };
-
     let port = 3044;
 
-    let platformUrl = 'http://localhost:' + port;
-
-    const queries: FarmQueries = {
-        farmById: '{"id": "{{id}}"}',
-        coopById: '{"id": "{{id}}"}',
-        coopByName: '{"payload.name": "{{id}}"}',
-        coopByFarmId: '{"payload.farm_id": "{{id}}"}',
+    const queries = {
         henById: '{"id": "{{id}}"}',
         henByName: '{"payload.name": "{{name}}"}',
-        henByCoopId: '{"payload.coop_id": "{{id}}"}',
     };
 
-    farmEnv = new FarmEnv(dbFactories, queries, platformUrl, port);
     plugins = { mongo: new MongoPlugin() };
-    server = await farmEnv.buildService(plugins);
-
-    // Initialize runtime properties in FarmEnv
-    farmEnv.token = unverifiedToken('test-user');
-    farmEnv.swaggerDocs = await farmEnv.getSwaggerDocs();
-    farmEnv.apis = await farmEnv.buildApi(farmEnv.swaggerDocs, farmEnv.token);
 
     // Authorization certification: its own service, its own collection, so the
-    // farm scenarios and the authz scenarios can't contaminate each other.
+    // authz scenarios can't contaminate anything else.
     const authzStorage: MongoConfig = { ...config, collection: `${PREFIX}-${ENV}-authz` };
     authzEnv = new AuthzEnv(
         authzStorage,
@@ -106,16 +67,13 @@ BeforeAll({ timeout: 120000 }, async function () {
     );
 });
 
-Before(async function (this: FarmTestWorld & AuthzTestWorld & ContractAuthzWorld) {
-    this.server = server;
-    this.env = farmEnv;
+Before(async function (this: AuthzTestWorld & ContractAuthzWorld) {
     this.authz = authzEnv;
     this.widgetHarness = widgetHarness;
 });
 
 AfterAll(async function () {
     await plugins['mongo'].cleanup();
-    await new Promise<void>((resolve) => server.close(() => resolve()));
     await new Promise<void>((resolve) => authzServer.close(() => resolve()));
     await mongod.stop();
 });

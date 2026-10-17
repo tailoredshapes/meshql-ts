@@ -74,12 +74,18 @@ export function init(
     apiPath: string,
     port: number,
     jsonSchema: Record<string, any>,
+    options: RestletteOptions = {},
 ): express.Application {
     logger.info(`API Docs are available at: http://localhost:${port}${apiPath}/api-docs/swagger.json`);
 
     const swaggerDoc: JsonObject = swaggerOptions(apiPath, port, jsonSchema);
+    if (options.frozen) {
+        // The documentation says what the router does: no replace, no delete.
+        delete swaggerDoc.paths[`${apiPath}/{id}`].put;
+        delete swaggerDoc.paths[`${apiPath}/{id}`].delete;
+    }
     logger.debug("Swagger documentation generated", { swaggerDoc });
-    const router = createRestletteRouter(apiPath, crud);
+    const router = createRestletteRouter(apiPath, crud, options);
 
     app.use(apiPath, router);
 
@@ -135,7 +141,14 @@ function createHealthCheck(repo: Repository) {
     return { health, ready };
 }
 
-function createRestletteRouter(apiPath: string, crud: Crud): Router {
+/** `frozen`: an event. Created and read, never replaced or deleted: PUT and DELETE answer 405. */
+export type RestletteOptions = { frozen?: boolean };
+
+const notAllowed: RequestHandler = (_req, res) => {
+    res.status(405).set('Allow', 'GET, POST').send({});
+};
+
+function createRestletteRouter(apiPath: string, crud: Crud, options: RestletteOptions = {}): Router {
     const router = Router();
     const { health, ready } = createHealthCheck(crud['_repo']);
 
@@ -148,8 +161,8 @@ function createRestletteRouter(apiPath: string, crud: Crud): Router {
     router.get('/:id/versions', crud.list_versions);
     router.get('/:id/versions/:token', crud.read_version);
     router.get('/:id', crud.read);
-    router.put('/:id', crud.update);
-    router.delete('/:id', crud.remove);
+    router.put('/:id', options.frozen ? notAllowed : crud.update);
+    router.delete('/:id', options.frozen ? notAllowed : crud.remove);
 
     return router;
 }

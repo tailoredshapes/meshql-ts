@@ -9,6 +9,7 @@ import { JWTSubAuthorizer } from '@tailoredshapes/meshql-jwt_auth';
 import { CasbinAuth } from '@tailoredshapes/meshql-casbin_auth';
 import cors from 'cors';
 import { Plugin } from './plugin';
+import { producedBy } from './producer';
 import { checkAllServicesHealth, checkAllServicesReady } from './health';
 
 const logger = getLogger('meshql-ts/server');
@@ -51,8 +52,9 @@ async function processRestlette(
 ) {
     const validator: Validator = JSONSchemaValidator(restlette.schema);
     const repo: Repository = await buildRepository(restlette.storage, plugins);
-    const crud = new Crud(auth, repo, validator, restlette.path);
-    rest_init(app, crud, restlette.path, port, restlette.schema);
+    const writers = restlette.producedBy === undefined ? undefined : [restlette.producedBy].flat();
+    const crud = new Crud(writers ? producedBy(auth, writers) : auth, repo, validator, restlette.path);
+    rest_init(app, crud, restlette.path, port, restlette.schema, { frozen: restlette.frozen });
 }
 
 async function processAuth(config: Config): Promise<Auth> {

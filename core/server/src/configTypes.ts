@@ -26,6 +26,18 @@ export const RestletteSchema = z.object({
     path: z.string(),
     storage: StorageConfigSchema,
     schema: z.record(z.any()),
+    /**
+     * An event: a fact, created and never changed. `PUT` and `DELETE` on a
+     * frozen restlette answer 405. A new state is a new document.
+     */
+    frozen: z.boolean().optional(),
+    /**
+     * A projection: written only by the worker(s) named here. A write
+     * (`POST`, `PUT`, `DELETE`, bulk) from any caller whose bearer `sub` is not
+     * one of these answers 403; reads are the auth plugin's, as for any
+     * entity. The library knows nothing of how the worker is fed.
+     */
+    producedBy: z.union([z.string(), z.array(z.string())]).optional(),
 });
 
 export type Restlette = z.infer<typeof RestletteSchema>;

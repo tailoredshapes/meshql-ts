@@ -28,6 +28,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Check out the pinned certification contract
+      uses: ./.github/actions/checkout-contract
+      with:
+        path: core/cert/features/contract
+        ssh-key: ${{ secrets.CONTRACT_SSH_KEY }}
+
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
@@ -35,7 +41,7 @@ jobs:
         cache: 'yarn'
 
     - name: Install dependencies
-      run: yarn install
+      run: yarn install --immutable
 
     - name: Build packages
       run: yarn build
